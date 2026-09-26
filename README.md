@@ -3,6 +3,8 @@
 A Zillow-style property search app backed by real MLS (IDX) data.
 React (Vite) -> Express API -> MySQL 8. React never talks to MySQL directly.
 
+![Search results with map pins](readme-assets/search-map.jpg)
+
 ## Features
 - Home page with trending listings and open-house badges
 - `/for-sale` search: city/ZIP/address, price, beds, baths, type, sort, pagination

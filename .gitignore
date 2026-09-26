@@ -4,6 +4,7 @@
 !/README.md
 !/backend/
 !/frontend/
+!/readme-assets/
 node_modules/
 dist/
 .env

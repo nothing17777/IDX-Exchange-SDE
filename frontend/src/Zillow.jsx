@@ -40,11 +40,11 @@ function SearchBox({ className, placeholder }) {
 
 export function Home() {
   const [d, setD] = useState(null)
-  useEffect(() => { fetch('/api/properties?q=Alhambra&limit=8&sort=price_asc').then((r) => r.json()).then(setD) }, [])
+  useEffect(() => { fetch('/api/properties?q=Los%20Angeles&limit=8&sort=price_asc').then((r) => r.json()).then(setD) }, [])
   const cards = [['Buy a home', 'A real estate agent can provide you with a clear breakdown of costs so that you can avoid surprise expenses.', 'Find a local agent', 'agents', 'homepage-spot-agent-lg'], ['Rent a home', 'We’re creating a seamless online experience – from shopping on the largest rental network, to applying, to paying rent.', 'Find rentals', 'rent', 'homepage-spot-rent-lg'], ['Finance a home', 'IDX Exchange Home Loans can get you pre-approved so you’re ready to make an offer quickly when you find the right home.', 'Start now', 'mortgage', 'homepage-spot-financing-lg']]
   return <Shell>
     <section className="hero"><h1>Rentals. Homes.<br />Agents. Loans.</h1><SearchBox className="search" placeholder="Enter an address, neighborhood, city, or ZIP code" /></section>
-    <section className="sec" style={{ paddingTop: 34 }}><div className="arrows"><span>‹</span><span>›</span></div><h5>Trending Homes in Alhambra, CA</h5><div className="sub">Viewed and saved the most in the area over the past 24 hours</div>
+    <section className="sec" style={{ paddingTop: 34 }}><div className="arrows"><span>‹</span><span>›</span></div><h5>Trending Homes in Los Angeles, CA</h5><div className="sub">Viewed and saved the most in the area over the past 24 hours</div>
       <div className="row">{d?.results.map((p) => <Link key={p.id} className="pc" to={`/property/${p.id}`}>
         <div className="ph" style={{ backgroundImage: p.photos[0] ? `url(${p.photos[0]})` : 'none' }}>{p.nextOpen && <span className="badge">{fmtOpen(p.nextOpen)}</span>}</div>
         <div className="in"><b>{usd(p.price)}</b><small>{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft &nbsp; Active</small><small>{p.address}, {p.city}, {p.state}, {p.zip}</small><div className="mls">MLS listing. Listing provided by CRMLS</div></div></Link>)}</div></section>
@@ -60,13 +60,13 @@ export function Home() {
 export function ForSale() {
   const [sp, setSp] = useSearchParams()
   const [d, setD] = useState(null)
-  const [f, setF] = useState({ q: sp.get('q') || 'Alhambra', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
-  const q = sp.get('q') || 'Alhambra', page = +sp.get('page') || 1
-  useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Alhambra'); fetch('/api/properties?' + n).then((r) => r.json()).then(setD) }, [sp])
+  const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
+  const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
+  useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); fetch('/api/properties?' + n).then((r) => r.json()).then(setD) }, [sp])
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
-  const mapParams = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Alhambra'); return n })()
+  const mapParams = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); return n })()
   return <Shell sale>
     <form className="filterbar" onSubmit={submit}>
       <div className="searchbox"><input style={{ border: 0, outline: 0, font: 'inherit', width: '100%' }} value={f.q} onChange={set('q')} /><span>⌕</span></div>

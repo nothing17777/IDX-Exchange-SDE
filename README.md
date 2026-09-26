@@ -3,6 +3,8 @@
 A Zillow-style property search app backed by real MLS (IDX) data.
 React (Vite) -> Express API -> MySQL 8. React never talks to MySQL directly.
 
+![Home page](readme-assets/home.jpg)
+
 ![Search results with map pins](readme-assets/search-map.jpg)
 
 ## Features

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams, useParams } from 'react-router-dom'
+import { Link, useSearchParams, useParams, useLocation } from 'react-router-dom'
 import { SIDE, FOOT } from './chrome.js'
 import MapView from './MapView.jsx'
 import './zillow-index.css'
@@ -7,7 +7,7 @@ import './zillow-sale.css'
 
 export const usd = (n) => '$' + Number(n).toLocaleString()
 const Z = 'https://www.zillowstatic.com/'
-const fmtOpen = (s) => {
+export const fmtOpen = (s) => {
   if (!s) return null
   const [d, t] = s.split('|'), [date, st] = d.split(' ')
   const dt = new Date(date + 'T00:00:00'), h = +st.slice(0, 2), e = +t.slice(0, 2)
@@ -15,11 +15,29 @@ const fmtOpen = (s) => {
   return `Open: ${dt.toLocaleDateString('en-US', { weekday: 'short' })} ${f(h)}-${f(e)} (${dt.getMonth() + 1}/${dt.getDate()})`
 }
 
+export const Spinner = () => <div className="spin" role="status" aria-label="Loading" />
+
+export function SiteSwitch({ current }) {
+  const { pathname, search } = useLocation()
+  const rest = current === 'redfin' ? pathname.replace(/^\/redfin/, '') : pathname
+  const to = (site) => {
+    if (site === current) return pathname + search
+    const z = rest === '/homes' ? '/for-sale' : rest || '/'
+    if (site === 'zillow') return z + search
+    return '/redfin' + (z === '/' ? '' : z === '/for-sale' ? '/homes' : z) + search
+  }
+  return <div className={'siteswitch ' + current}>
+    <Link className={current === 'zillow' ? 'on z' : 'z'} to={to('zillow')}>Zillow</Link>
+    <Link className={current === 'redfin' ? 'on r' : 'r'} to={to('redfin')}>Redfin</Link>
+  </div>
+}
+
 export function Shell({ children, sale }) {
   return <div className={sale ? 'sale' : ''}>
     <div dangerouslySetInnerHTML={{ __html: SIDE }} />
     <div className="wrap">
       <header>
+        <SiteSwitch current="zillow" />
         <nav><Link to="/for-sale">Buy</Link><Link to="/rent">Rent</Link><Link to="/sell">Sell</Link><Link to="/mortgage">Get a mortgage</Link><Link to="/agents">Find an agent</Link></nav>
         <Link className="logo" to="/">IDX Exchange</Link>
         <nav className="r"><Link to="/manage-rentals">Manage rentals</Link><Link to="/advertise">Advertise</Link><Link to="/help">Get help</Link><a className="signin" href="#">Sign in</a></nav>
@@ -45,7 +63,7 @@ export function Home() {
   return <Shell>
     <section className="hero"><h1>Rentals. Homes.<br />Agents. Loans.</h1><SearchBox className="search" placeholder="Enter an address, neighborhood, city, or ZIP code" /></section>
     <section className="sec" style={{ paddingTop: 34 }}><div className="arrows"><span>‹</span><span>›</span></div><h5>Trending Homes in Los Angeles, CA</h5><div className="sub">Viewed and saved the most in the area over the past 24 hours</div>
-      <div className="row">{d?.results.map((p) => <Link key={p.id} className="pc" to={`/property/${p.id}`}>
+      <div className="row">{!d && <Spinner />}{d?.results.map((p) => <Link key={p.id} className="pc" to={`/property/${p.id}`}>
         <div className="ph" style={{ backgroundImage: p.photos[0] ? `url(${p.photos[0]})` : 'none' }}>{p.nextOpen && <span className="badge">{fmtOpen(p.nextOpen)}</span>}</div>
         <div className="in"><b>{usd(p.price)}</b><small>{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft &nbsp; Active</small><small>{p.address}, {p.city}, {p.state}, {p.zip}</small><div className="mls">MLS listing. Listing provided by CRMLS</div></div></Link>)}</div></section>
     <section className="sec" style={{ paddingTop: 38 }}><h5>Find homes you can afford with BuyAbility℠</h5><div className="sub">Answer a few questions. We'll highlight homes you're likely to qualify for.</div>
@@ -84,7 +102,7 @@ export function ForSale() {
         <h1>{q} Real Estate &amp; Homes For Sale</h1>
         <div className="count"><span>{d ? `${d.total.toLocaleString()} results` : 'Loading...'}</span>
           <select value={f.sort} onChange={(e) => { const v = e.target.value; setF({ ...f, sort: v }); const n = new URLSearchParams(sp); v ? n.set('sort', v) : n.delete('sort'); setSp(n) }} style={{ border: 0, font: 'inherit' }}><option value="">Sort: Homes for You</option><option value="price_asc">Price (Low to High)</option><option value="price_desc">Price (High to Low)</option></select></div>
-        <div className="grid">{d?.results.map((p) => <Link key={p.id} className="card" to={`/property/${p.id}`}>
+        <div className="grid">{!d && <Spinner />}{d?.results.map((p) => <Link key={p.id} className="card" to={`/property/${p.id}`}>
           <div className="ph" style={{ backgroundImage: p.photos[0] ? `url(${p.photos[0]})` : 'none' }}><div className="heart">♡</div></div>
           <div className="in"><div className="price">{usd(p.price)}</div>
             <div className="meta">{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | {p.type?.replace(/([A-Z])/g, ' $1').trim()} for sale</div>
@@ -105,7 +123,7 @@ export function Detail() {
     <div style={{ maxWidth: 1100, margin: 'auto', padding: 20 }}>
       <Link to="/for-sale" style={{ color: '#0041D9', fontWeight: 700 }}>← Back to search</Link>
       {err && <p>Listing not found.</p>}
-      {!p && !err && <p>Loading...</p>}
+      {!p && !err && <Spinner />}
       {p && <>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 6, height: 400, borderRadius: 12, overflow: 'hidden', margin: '12px 0' }}>
           {p.photos.slice(0, 5).map((u, i) => <div key={i} style={{ background: `#ddd url(${u}) center/cover`, gridRow: i === 0 ? 'span 2' : 'auto' }} />)}</div>

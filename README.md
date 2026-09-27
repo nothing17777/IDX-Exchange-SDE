@@ -3,9 +3,17 @@
 A Zillow-style property search app backed by real MLS (IDX) data.
 React (Vite) -> Express API -> MySQL 8. React never talks to MySQL directly.
 
-![Home page](readme-assets/home.jpg)
+Switch between the two site styles with the Zillow | Redfin toggle in the header.
 
-![Search results with map pins](readme-assets/search-map.jpg)
+### Zillow style
+![Zillow home page](readme-assets/zillow-home.jpg)
+
+![Zillow search results with map pins](readme-assets/zillow-search.jpg)
+
+### Redfin style (`/redfin`)
+![Redfin home page](readme-assets/redfin-home.jpg)
+
+![Redfin search results with map pins](readme-assets/redfin-search.jpg)
 
 ## Features
 - Home page with trending listings and open-house badges

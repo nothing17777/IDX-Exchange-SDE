@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 
 const short = (n) => (n >= 1e6 ? `$${+(n / 1e6).toFixed(2)}M` : `$${Math.round(n / 1e3)}K`)
 
-export default function MapView({ params }) {
+export default function MapView({ params, base = '' }) {
   const el = useRef(), map = useRef(), layer = useRef(), nav = useNavigate()
   useEffect(() => {
     map.current = L.map(el.current, { zoomControl: true }).setView([34.09, -118.13], 12)
@@ -23,7 +23,7 @@ export default function MapView({ params }) {
       rows.forEach((p) => {
         const ll = [+p.lat, +p.lng]; pts.push(ll)
         L.marker(ll, { icon: L.divIcon({ className: '', html: `<div class="pin">${short(p.price)}</div>`, iconSize: null }) })
-          .on('click', () => nav('/property/' + p.id)).addTo(layer.current)
+          .on('click', () => nav(base + '/property/' + p.id)).addTo(layer.current)
       })
       map.current.invalidateSize()
       if (pts.length) map.current.fitBounds(pts, { padding: [40, 40], maxZoom: 15 })

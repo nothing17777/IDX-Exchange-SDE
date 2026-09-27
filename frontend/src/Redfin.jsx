@@ -10,7 +10,7 @@ function Shell({ children, flat }) {
   return <div className={'rf' + (flat ? ' flat' : '')}>
     <header className="rfh">
       <SiteSwitch current="redfin" />
-      <Link className="rflogo" to={B}>IDX Exchange</Link>
+      <Link className="rflogo" to={B}><img src="/idx-logo.png" alt="IDX Exchange" /></Link>
       <nav><Link to={B + '/homes'}>Buy</Link><Link to="/rent">Rent</Link><Link to="/sell">Sell</Link><Link to="/mortgage">Mortgage</Link><Link to="/agents">Find an Agent</Link></nav>
       <nav className="r"><Link to="/help">Help</Link><a className="rfin" href="#">Sign In</a></nav>
     </header>

@@ -39,7 +39,7 @@ export function Shell({ children, sale }) {
       <header>
         <SiteSwitch current="zillow" />
         <nav><Link to="/for-sale">Buy</Link><Link to="/rent">Rent</Link><Link to="/sell">Sell</Link><Link to="/mortgage">Get a mortgage</Link><Link to="/agents">Find an agent</Link></nav>
-        <Link className="logo" to="/">IDX Exchange</Link>
+        <Link className="logo" to="/"><img src="/idx-logo.png" alt="IDX Exchange" /></Link>
         <nav className="r"><Link to="/manage-rentals">Manage rentals</Link><Link to="/advertise">Advertise</Link><Link to="/help">Get help</Link><a className="signin" href="#">Sign in</a></nav>
       </header>
       {children}

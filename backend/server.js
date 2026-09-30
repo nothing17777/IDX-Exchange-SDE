@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const mysql = require('mysql2/promise');
 
 const pool = mysql.createPool({
@@ -9,6 +10,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME, connectionLimit: 10,
 });
 const app = express();
+app.use(compression());
 app.use(cors());
 
 app.get('/api/health', async (req, res) => {

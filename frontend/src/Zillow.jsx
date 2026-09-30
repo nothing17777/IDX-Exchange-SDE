@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams, useParams, useLocation } from 'react-router-dom'
+import { Link, useSearchParams, useParams, useLocation, useNavigate } from 'react-router-dom'
 import { SIDE, FOOT } from './chrome.js'
 import MapView from './MapView.jsx'
 import './zillow-index.css'
@@ -78,6 +78,7 @@ export function Home() {
 export function ForSale() {
   const [sp, setSp] = useSearchParams()
   const [d, setD] = useState(null)
+  const nav = useNavigate()
   const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
   useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'sale'); fetch('/api/properties?' + n).then((r) => r.json()).then(setD) }, [sp])
@@ -85,10 +86,11 @@ export function ForSale() {
   const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
   const mapParams = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'sale'); return n })()
+  const switchCategory = (e) => { if (e.target.value === 'rent') nav('/rent?' + new URLSearchParams({ q: f.q })) }
   return <Shell sale>
     <form className="filterbar" onSubmit={submit}>
       <div className="searchbox"><input style={{ border: 0, outline: 0, font: 'inherit', width: '100%' }} value={f.q} onChange={set('q')} /><span>⌕</span></div>
-      <label className="chip on">For sale ▾</label>
+      <select className="chip on" value="sale" onChange={switchCategory}><option value="sale">For sale</option><option value="rent">For rent</option></select>
       <select className="chip" value={f.type} onChange={set('type')}><option value="">Property type ▾</option><option>SingleFamilyResidence</option><option>Condominium</option><option>Townhouse</option><option>Duplex</option></select>
       <input className="chip" style={{ width: 110 }} type="number" placeholder="Min price" value={f.minPrice} onChange={set('minPrice')} />
       <input className="chip" style={{ width: 110 }} type="number" placeholder="Max price" value={f.maxPrice} onChange={set('maxPrice')} />
@@ -118,6 +120,7 @@ export function ForSale() {
 export function ForRent() {
   const [sp, setSp] = useSearchParams()
   const [d, setD] = useState(null)
+  const nav = useNavigate()
   const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
   useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'rent'); fetch('/api/properties?' + n).then((r) => r.json()).then(setD) }, [sp])
@@ -125,10 +128,11 @@ export function ForRent() {
   const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
   const mapParams = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'rent'); return n })()
+  const switchCategory = (e) => { if (e.target.value === 'sale') nav('/for-sale?' + new URLSearchParams({ q: f.q })) }
   return <Shell sale>
     <form className="filterbar" onSubmit={submit}>
       <div className="searchbox"><input style={{ border: 0, outline: 0, font: 'inherit', width: '100%' }} value={f.q} onChange={set('q')} /><span>⌕</span></div>
-      <label className="chip on">For rent ▾</label>
+      <select className="chip on" value="rent" onChange={switchCategory}><option value="sale">For sale</option><option value="rent">For rent</option></select>
       <select className="chip" value={f.type} onChange={set('type')}><option value="">Property type ▾</option><option>Apartment</option><option>SingleFamilyResidence</option><option>Condominium</option><option>Townhouse</option><option>Duplex</option></select>
       <input className="chip" style={{ width: 110 }} type="number" placeholder="Min rent" value={f.minPrice} onChange={set('minPrice')} />
       <input className="chip" style={{ width: 110 }} type="number" placeholder="Max rent" value={f.maxPrice} onChange={set('maxPrice')} />

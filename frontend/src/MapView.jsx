@@ -20,17 +20,10 @@ export default function MapView({ params, base = '' }) {
       if (!live) return
       layer.current.clearLayers()
       const pts = []
-      // Large result sets render as cheap canvas dots (no per-marker DOM nodes);
-      // small/filtered sets keep the labeled pins since the count stays manageable.
-      // The map endpoint caps at 1000 rows, so a full page means the true result
-      // count is much larger — switch those to dots; smaller sets keep price labels.
-      const dense = rows.length >= 1000
       rows.forEach((p) => {
         const ll = [+p.lat, +p.lng]; pts.push(ll)
-        const m = dense
-          ? L.circleMarker(ll, { radius: 5, weight: 1, color: '#1b74e4', fillColor: '#1b74e4', fillOpacity: 0.85 })
-          : L.marker(ll, { icon: L.divIcon({ className: '', html: `<div class="pin">${short(p.price)}</div>`, iconSize: null }) })
-        m.on('click', () => nav(base + '/property/' + p.id)).addTo(layer.current)
+        L.marker(ll, { icon: L.divIcon({ className: '', html: `<div class="pin">${short(p.price)}</div>`, iconSize: null }) })
+          .on('click', () => nav(base + '/property/' + p.id)).addTo(layer.current)
       })
       map.current.invalidateSize()
       if (pts.length) map.current.fitBounds(pts, { padding: [40, 40], maxZoom: 15 })

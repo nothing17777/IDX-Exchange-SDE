@@ -18,9 +18,10 @@ Switch between the two site styles with the Zillow | Redfin toggle in the header
 ## Features
 - Home page with trending listings and open-house badges
 - `/for-sale` search: city/ZIP/address, price, beds, baths, type, sort, pagination
+- `/rent` search: same filters/layout as `/for-sale`, scoped to lease listings (see `RENTAL_PROPERTY_TYPES` below)
 - Interactive map showing every matching listing as a price pin (Leaflet + OpenStreetMap, no API key)
-- Property detail page: photos, remarks, upcoming open houses, map
-- Mortgage payment calculator; Rent, Sell, Find an agent, etc. show "Coming soon"
+- Property detail page: photos, remarks, upcoming open houses, map (shows `/mo` pricing for rentals)
+- Mortgage payment calculator; Sell, Find an agent, etc. show "Coming soon"
 
 ## Prerequisites
 Node.js (LTS), npm, Docker Desktop, and the two data files `rets_property.sql` and
@@ -50,6 +51,13 @@ Check http://localhost:5001/api/health -> `{"status":"ok","database":"connected"
 
 Endpoints: `GET /api/health`, `GET /api/properties`, `GET /api/properties/map`,
 `GET /api/properties/:id`, `GET /api/cities`.
+
+`GET /api/properties` and `/api/properties/map` accept `category=rent` (or `sale`) to
+scope results to lease vs. for-sale listings, based on `L_Type_`. Which type strings count
+as rentals is configured via `RENTAL_PROPERTY_TYPES` in `backend/.env` (defaults to
+`ResidentialLease,Apartment`) — check `SELECT DISTINCT L_Type_ FROM rets_property` against
+your actual MLS feed and adjust if it uses different values, or the `/rent` page will just
+come back empty.
 
 ## 3. Run the frontend
 ```bash

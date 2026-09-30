@@ -22,7 +22,7 @@ function Card({ p }) {
   return <Link className="rfc" to={`${B}/property/${p.id}`}>
     <div className="ph" style={{ backgroundImage: p.photos[0] ? `url(${p.photos[0]})` : 'none' }}>
       <span className="tag">{p.nextOpen ? fmtOpen(p.nextOpen) : 'NEW'}</span><span className="hrt">♡</span></div>
-    <div className="in"><div className="pr">{usd(p.price)}</div>
+    <div className="in"><div className="pr">{usd(p.price)}{p.forRent ? '/mo' : ''}</div>
       <div className="st"><b>{p.beds}</b> beds <b>{Number(p.baths)}</b> baths <b>{p.sqft?.toLocaleString()}</b> sq ft</div>
       <div className="ad">{p.address}, {p.city}, {p.state} {p.zip}</div>
       <div className="br">{kind(p.type)} · CRMLS</div></div></Link>
@@ -30,7 +30,7 @@ function Card({ p }) {
 
 export function RfHome() {
   const [d, setD] = useState(null), [q, setQ] = useState(''), [tab, setTab] = useState('Buy')
-  useEffect(() => { fetch('/api/properties?q=Los%20Angeles&limit=8&sort=price_asc').then((r) => r.json()).then(setD) }, [])
+  useEffect(() => { fetch('/api/properties?q=Los%20Angeles&limit=8&sort=price_asc&category=sale').then((r) => r.json()).then(setD) }, [])
   const go = (e) => { e.preventDefault(); location.href = `${B}/homes?q=` + encodeURIComponent(q) }
   return <Shell>
     <section className="rfhero"><h1>Find where you belong</h1>
@@ -48,7 +48,7 @@ export function RfSearch() {
   const [sp, setSp] = useSearchParams(), [d, setD] = useState(null)
   const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
-  const params = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); return n })()
+  const params = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'sale'); return n })()
   useEffect(() => { setD(null); fetch('/api/properties?' + params).then((r) => r.json()).then(setD) }, [sp])
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
@@ -88,7 +88,7 @@ export function RfDetail() {
       {!p && !err && <Spinner />}
       {p && <>
         <div className="gal">{p.photos.slice(0, 5).map((u, i) => <div key={i} style={{ backgroundImage: `url(${u})`, gridRow: i === 0 ? 'span 2' : 'auto' }} />)}</div>
-        <div className="top"><div><div className="pr">{usd(p.price)}</div><div className="ad">{p.address}, {p.city}, {p.state} {p.zip}</div></div>
+        <div className="top"><div><div className="pr">{usd(p.price)}{p.forRent ? '/mo' : ''}</div><div className="ad">{p.address}, {p.city}, {p.state} {p.zip}</div></div>
           <div className="facts"><div><b>{p.beds}</b>Beds</div><div><b>{Number(p.baths)}</b>Baths</div><div><b>{p.sqft?.toLocaleString()}</b>Sq Ft</div><div><b>{p.yearBuilt || '—'}</b>Built</div></div></div>
         <h2>About this home</h2><p>{p.remarks}</p>
         {p.openHouses.length > 0 && <><h2>Open houses</h2>{p.openHouses.map((o, i) => <div key={i} className="oh"><b>{new Date(String(o.date).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</b> {o.startTime.slice(0, 5)}-{o.endTime.slice(0, 5)}{o.remarks ? ` — ${o.remarks}` : ''}</div>)}</>}

@@ -22,9 +22,17 @@ const SUMMARY = `L_ListingID id, L_Address address, L_City city, L_State state, 
   (SELECT MIN(CONCAT(o.OpenHouseDate,' ',o.OH_StartTime,'|',o.OH_EndTime)) FROM rets_openhouse o WHERE o.L_ListingID = rets_property.L_ListingID AND o.OpenHouseDate >= CURDATE()) nextOpen,
   LMD_MP_Latitude lat, LMD_MP_Longitude lng, YearBuilt yearBuilt, L_Photos photos`;
 
+const RENTAL_TYPES = (process.env.RENTAL_PROPERTY_TYPES || 'ResidentialLease,Apartment')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+
 function buildWhere(req) {
-  const { city, minPrice, maxPrice, beds, baths, type, q } = req.query;
+  const { city, minPrice, maxPrice, beds, baths, type, q, category } = req.query;
   const where = ["L_Status='Active'"], args = [];
+  if (category === 'rent') {
+    if (RENTAL_TYPES.length) { where.push(`L_Type_ IN (${RENTAL_TYPES.map(() => '?').join(',')})`); args.push(...RENTAL_TYPES); }
+  } else if (category === 'sale' && RENTAL_TYPES.length) {
+    where.push(`L_Type_ NOT IN (${RENTAL_TYPES.map(() => '?').join(',')})`); args.push(...RENTAL_TYPES);
+  }
   if (city) { where.push('L_City = ?'); args.push(city); }
   if (q) { where.push('(L_City LIKE ? OR L_Zip LIKE ? OR L_Address LIKE ?)'); args.push(`${q}%`, `${q}%`, `${q}%`); }
   if (minPrice) { where.push('L_SystemPrice >= ?'); args.push(+minPrice); }
@@ -55,7 +63,7 @@ app.get('/api/properties', async (req, res) => {
     const [rows] = await pool.query(
       `SELECT ${SUMMARY} FROM rets_property WHERE ${w} ORDER BY ${sorts[req.query.sort] || sorts.newest} LIMIT ? OFFSET ?`,
       [...args, limit, (page - 1) * limit]);
-    rows.forEach((r) => { r.photos = parsePhotos(r.photos).slice(0, 1); });
+    rows.forEach((r) => { r.photos = parsePhotos(r.photos).slice(0, 1); r.forRent = RENTAL_TYPES.includes(r.type); });
     res.json({ total, page, limit, pages: Math.ceil(total / limit), results: rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
@@ -65,7 +73,7 @@ app.get('/api/properties/:id', async (req, res) => {
     const [rows] = await pool.query(
       `SELECT ${SUMMARY}, L_Remarks remarks, LotSizeAcres lotAcres FROM rets_property WHERE L_ListingID = ?`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
-    const p = rows[0]; p.photos = parsePhotos(p.photos);
+    const p = rows[0]; p.photos = parsePhotos(p.photos); p.forRent = RENTAL_TYPES.includes(p.type);
     const [oh] = await pool.query(
       `SELECT OpenHouseDate date, OH_StartTime startTime, OH_EndTime endTime, all_data FROM rets_openhouse
        WHERE L_ListingID = ? AND OpenHouseDate >= CURDATE() ORDER BY OpenHouseDate`, [req.params.id]);

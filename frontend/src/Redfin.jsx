@@ -11,7 +11,7 @@ function Shell({ children, flat }) {
     <header className="rfh">
       <SiteSwitch current="redfin" />
       <Link className="rflogo" to={B}><img src="/idx-logo.png" alt="IDX Exchange" /></Link>
-      <nav><Link to={B + '/homes'}>Buy</Link><Link to="/rent">Rent</Link><Link to="/sell">Sell</Link><Link to="/mortgage">Mortgage</Link><Link to="/agents">Find an Agent</Link></nav>
+      <nav><Link to={B + '/homes'}>Buy</Link><Link to={B + '/rent'}>Rent</Link><Link to="/sell">Sell</Link><Link to="/mortgage">Mortgage</Link><Link to="/agents">Find an Agent</Link></nav>
       <nav className="r"><Link to="/help">Help</Link><a className="rfin" href="#">Sign In</a></nav>
     </header>
     {children}
@@ -77,13 +77,47 @@ export function RfSearch() {
   </Shell>
 }
 
+export function RfRent() {
+  const [sp, setSp] = useSearchParams(), [d, setD] = useState(null)
+  const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
+  const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
+  const params = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'rent'); return n })()
+  useEffect(() => { setD(null); fetch('/api/properties?' + params).then((r) => r.json()).then(setD) }, [sp])
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
+  const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
+  const sort = (e) => { const v = e.target.value, n = new URLSearchParams(sp); v ? n.set('sort', v) : n.delete('sort'); setF({ ...f, sort: v }); setSp(n) }
+  return <Shell flat>
+    <form className="rffilters" onSubmit={submit}>
+      <input className="rfin q" value={f.q} onChange={set('q')} placeholder="City, Address, ZIP" />
+      <select value={f.type} onChange={set('type')}><option value="">Home Type</option><option>ResidentialLease</option><option>Apartment</option></select>
+      <input type="number" placeholder="Min rent" value={f.minPrice} onChange={set('minPrice')} />
+      <input type="number" placeholder="Max rent" value={f.maxPrice} onChange={set('maxPrice')} />
+      <select value={f.beds} onChange={set('beds')}><option value="">Beds</option>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}+</option>)}</select>
+      <select value={f.baths} onChange={set('baths')}><option value="">Baths</option>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}+</option>)}</select>
+      <button className="rfbtn">Search</button>
+    </form>
+    <div className="rfres">
+      <div className="rfmap"><MapView params={params} base={B} /></div>
+      <div className="rflist">
+        <h1>{q}, CA Apartments &amp; Houses for Rent</h1>
+        <div className="cnt"><span>{d ? `${d.total.toLocaleString()} rentals` : 'Loading...'}</span>
+          <select value={f.sort} onChange={sort}><option value="">Sort: Recommended</option><option value="price_asc">Rent (Low to High)</option><option value="price_desc">Rent (High to Low)</option></select></div>
+        <div className="rfgrid">{!d && <Spinner />}{d?.results.map((p) => <Card key={p.id} p={p} />)}</div>
+        {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: '#535364' }}>No rentals match your search yet — try widening your filters.</div>}
+        {d && d.results.length > 0 && <div className="pg"><button disabled={page <= 1} onClick={() => go(page - 1)}>‹ Prev</button><span>Page {page} of {d.pages}</span><button disabled={page >= d.pages} onClick={() => go(page + 1)}>Next ›</button></div>}
+      </div>
+    </div>
+  </Shell>
+}
+
 export function RfDetail() {
   const { id } = useParams()
   const [p, setP] = useState(null), [err, setErr] = useState(false)
   useEffect(() => { fetch('/api/properties/' + id).then((r) => (r.ok ? r.json() : Promise.reject())).then(setP).catch(() => setErr(true)) }, [id])
   return <Shell flat>
     <div className="rfdet">
-      <Link className="back" to={B + '/homes'}>‹ Back to search</Link>
+      <Link className="back" to={p?.forRent ? B + '/rent' : B + '/homes'}>‹ Back to search</Link>
       {err && <p>Listing not found.</p>}
       {!p && !err && <Spinner />}
       {p && <>

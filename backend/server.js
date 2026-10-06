@@ -28,22 +28,24 @@ const RENTAL_TYPES = (process.env.RENTAL_PROPERTY_TYPES || 'ResidentialLease,Apa
   .split(',').map((s) => s.trim()).filter(Boolean);
 
 function validateQuery(req) {
-  const { page, limit, minPrice, maxPrice, beds, baths, category } = req.query;
+  const { page, limit, offset, minPrice, maxPrice, beds, baths, category, zipcode } = req.query;
   const errors = [];
   const isNum = (v) => v === undefined || (v !== '' && !Number.isNaN(Number(v)));
   if (page !== undefined && (!isNum(page) || !Number.isInteger(+page) || +page < 1)) errors.push('page must be a positive integer');
-  if (limit !== undefined && (!isNum(limit) || !Number.isInteger(+limit) || +limit < 1)) errors.push('limit must be a positive integer');
+  if (limit !== undefined && (!isNum(limit) || !Number.isInteger(+limit) || +limit < 1 || +limit > 100)) errors.push('limit must be an integer between 1 and 100');
+  if (offset !== undefined && (!isNum(offset) || !Number.isInteger(+offset) || +offset < 0)) errors.push('offset must be a non-negative integer');
   if (!isNum(minPrice) || +minPrice < 0) errors.push('minPrice must be a non-negative number');
   if (!isNum(maxPrice) || +maxPrice < 0) errors.push('maxPrice must be a non-negative number');
   if (!isNum(beds) || +beds < 0) errors.push('beds must be a non-negative number');
   if (!isNum(baths) || +baths < 0) errors.push('baths must be a non-negative number');
+  if (zipcode !== undefined && !/^\d{1,10}$/.test(zipcode)) errors.push('zipcode must be numeric');
   if (category !== undefined && !['sale', 'rent'].includes(category)) errors.push("category must be 'sale' or 'rent'");
   if (minPrice !== undefined && maxPrice !== undefined && isNum(minPrice) && isNum(maxPrice) && +minPrice > +maxPrice) errors.push('minPrice must not exceed maxPrice');
   return errors;
 }
 
 function buildWhere(req) {
-  const { city, minPrice, maxPrice, beds, baths, type, q, category } = req.query;
+  const { city, zipcode, minPrice, maxPrice, beds, baths, type, q, category } = req.query;
   const where = ["L_Status='Active'"], args = [];
   if (category === 'rent') {
     if (RENTAL_TYPES.length) { where.push(`L_Type_ IN (${RENTAL_TYPES.map(() => '?').join(',')})`); args.push(...RENTAL_TYPES); }
@@ -51,6 +53,7 @@ function buildWhere(req) {
     where.push(`L_Type_ NOT IN (${RENTAL_TYPES.map(() => '?').join(',')})`); args.push(...RENTAL_TYPES);
   }
   if (city) { where.push('L_City = ?'); args.push(city); }
+  if (zipcode) { where.push('L_Zip = ?'); args.push(zipcode); }
   if (q) { where.push('(L_City LIKE ? OR L_Zip LIKE ? OR L_Address LIKE ?)'); args.push(`${q}%`, `${q}%`, `${q}%`); }
   if (minPrice) { where.push('L_SystemPrice >= ?'); args.push(+minPrice); }
   if (maxPrice) { where.push('L_SystemPrice <= ?'); args.push(+maxPrice); }
@@ -76,16 +79,18 @@ app.get('/api/properties', async (req, res) => {
   const errors = validateQuery(req);
   if (errors.length) return res.status(400).json({ error: 'Invalid query parameters', details: errors });
   try {
+    const limit = Math.max(1, parseInt(req.query.limit) || 20);
+    // offset wins when given directly (API contract); otherwise derive it from page (used by the frontend).
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(60, Math.max(1, parseInt(req.query.limit) || 24));
+    const offset = req.query.offset !== undefined ? Math.max(0, parseInt(req.query.offset) || 0) : (page - 1) * limit;
     const { w, args } = buildWhere(req);
     const sorts = { price_asc: 'L_SystemPrice ASC', price_desc: 'L_SystemPrice DESC', newest: 'L_ListingID DESC' };
     const [[{ total }]] = await pool.query(`SELECT COUNT(*) total FROM rets_property WHERE ${w}`, args);
     const [rows] = await pool.query(
       `SELECT ${SUMMARY} FROM rets_property WHERE ${w} ORDER BY ${sorts[req.query.sort] || sorts.newest} LIMIT ? OFFSET ?`,
-      [...args, limit, (page - 1) * limit]);
+      [...args, limit, offset]);
     rows.forEach((r) => { r.photos = parsePhotos(r.photos).slice(0, 1); r.forRent = RENTAL_TYPES.includes(r.type); });
-    res.json({ total, page, limit, pages: Math.ceil(total / limit), results: rows });
+    res.json({ total, limit, offset, page: Math.floor(offset / limit) + 1, pages: Math.ceil(total / limit), results: rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 

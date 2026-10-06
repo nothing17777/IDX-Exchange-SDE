@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const mysql = require('mysql2/promise');
 
 const pool = mysql.createPool({
@@ -9,6 +10,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME, connectionLimit: 10,
 });
 const app = express();
+app.use(compression());
 app.use(cors());
 
 app.get('/api/health', async (req, res) => {
@@ -22,11 +24,23 @@ const SUMMARY = `L_ListingID id, L_Address address, L_City city, L_State state, 
   (SELECT MIN(CONCAT(o.OpenHouseDate,' ',o.OH_StartTime,'|',o.OH_EndTime)) FROM rets_openhouse o WHERE o.L_ListingID = rets_property.L_ListingID AND o.OpenHouseDate >= CURDATE()) nextOpen,
   LMD_MP_Latitude lat, LMD_MP_Longitude lng, YearBuilt yearBuilt, L_Photos photos`;
 
-// Lease/rental listings are identified by L_Type_ values distinct from the for-sale
-// residential types (SingleFamilyResidence, Condominium, etc). Configure these to match
-// whatever your MLS feed actually uses (check `SELECT DISTINCT L_Type_ FROM rets_property`).
 const RENTAL_TYPES = (process.env.RENTAL_PROPERTY_TYPES || 'ResidentialLease,Apartment')
   .split(',').map((s) => s.trim()).filter(Boolean);
+
+function validateQuery(req) {
+  const { page, limit, minPrice, maxPrice, beds, baths, category } = req.query;
+  const errors = [];
+  const isNum = (v) => v === undefined || (v !== '' && !Number.isNaN(Number(v)));
+  if (page !== undefined && (!isNum(page) || !Number.isInteger(+page) || +page < 1)) errors.push('page must be a positive integer');
+  if (limit !== undefined && (!isNum(limit) || !Number.isInteger(+limit) || +limit < 1)) errors.push('limit must be a positive integer');
+  if (!isNum(minPrice) || +minPrice < 0) errors.push('minPrice must be a non-negative number');
+  if (!isNum(maxPrice) || +maxPrice < 0) errors.push('maxPrice must be a non-negative number');
+  if (!isNum(beds) || +beds < 0) errors.push('beds must be a non-negative number');
+  if (!isNum(baths) || +baths < 0) errors.push('baths must be a non-negative number');
+  if (category !== undefined && !['sale', 'rent'].includes(category)) errors.push("category must be 'sale' or 'rent'");
+  if (minPrice !== undefined && maxPrice !== undefined && isNum(minPrice) && isNum(maxPrice) && +minPrice > +maxPrice) errors.push('minPrice must not exceed maxPrice');
+  return errors;
+}
 
 function buildWhere(req) {
   const { city, minPrice, maxPrice, beds, baths, type, q, category } = req.query;
@@ -47,6 +61,8 @@ function buildWhere(req) {
 }
 
 app.get('/api/properties/map', async (req, res) => {
+  const errors = validateQuery(req);
+  if (errors.length) return res.status(400).json({ error: 'Invalid query parameters', details: errors });
   try {
     const { w, args } = buildWhere(req);
     const [rows] = await pool.query(
@@ -57,6 +73,8 @@ app.get('/api/properties/map', async (req, res) => {
 });
 
 app.get('/api/properties', async (req, res) => {
+  const errors = validateQuery(req);
+  if (errors.length) return res.status(400).json({ error: 'Invalid query parameters', details: errors });
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(60, Math.max(1, parseInt(req.query.limit) || 24));

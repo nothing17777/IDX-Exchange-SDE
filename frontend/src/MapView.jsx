@@ -8,7 +8,7 @@ const short = (n) => (n >= 1e6 ? `$${+(n / 1e6).toFixed(2)}M` : `$${Math.round(n
 export default function MapView({ params, base = '' }) {
   const el = useRef(), map = useRef(), layer = useRef(), nav = useNavigate()
   useEffect(() => {
-    map.current = L.map(el.current, { zoomControl: true }).setView([34.09, -118.13], 12)
+    map.current = L.map(el.current, { zoomControl: true, preferCanvas: true }).setView([34.09, -118.13], 12)
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', maxZoom: 19 }).addTo(map.current)
     layer.current = L.layerGroup().addTo(map.current)
     return () => map.current.remove()

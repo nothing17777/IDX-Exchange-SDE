@@ -13,12 +13,35 @@ const app = express();
 app.use(compression());
 app.use(cors());
 
+// Request logging: one line per request with method, URL, status and duration.
+// Logged on 'finish' so the status code and total time are final.
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on('finish', () => {
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} ${ms.toFixed(1)}ms`);
+  });
+  next();
+});
+
 app.get('/api/health', async (req, res) => {
   try { await pool.query('SELECT 1'); res.json({ status: 'ok', database: 'connected' }); }
   catch { res.status(500).json({ status: 'error', database: 'disconnected' }); }
 });
 
 const parsePhotos = (s) => { try { return JSON.parse(s) || []; } catch { return []; } };
+
+// all_data is a JSON blob in the MLS feed; it is not always valid JSON and is
+// not always an object (some rows hold a bare string or null), so every access
+// past the parse is guarded.
+function toOpenHouse({ all_data, ...o }) {
+  let remarks = null;
+  try {
+    const parsed = JSON.parse(all_data);
+    if (parsed && typeof parsed === 'object') remarks = parsed.OpenHouseRemarks ?? null;
+  } catch { /* leave remarks null for malformed blobs */ }
+  return { ...o, remarks };
+}
 const SUMMARY = `L_ListingID id, L_Address address, L_City city, L_State state, L_Zip zip,
   L_SystemPrice price, L_Keyword2 beds, LM_Dec_3 baths, LM_Int2_3 sqft, L_Type_ type,
   (SELECT MIN(CONCAT(o.OpenHouseDate,' ',o.OH_StartTime,'|',o.OH_EndTime)) FROM rets_openhouse o WHERE o.L_ListingID = rets_property.L_ListingID AND o.OpenHouseDate >= CURDATE()) nextOpen,
@@ -26,6 +49,17 @@ const SUMMARY = `L_ListingID id, L_Address address, L_City city, L_State state, 
 
 const RENTAL_TYPES = (process.env.RENTAL_PROPERTY_TYPES || 'ResidentialLease,Apartment')
   .split(',').map((s) => s.trim()).filter(Boolean);
+
+// L_ListingID values are short alphanumeric MLS keys. Anything else (path
+// fragments, SQL-ish payloads, absurdly long strings) is a bad request, not a
+// missing property, so it gets a 400 rather than a 404.
+const LISTING_ID_MAX = 32;
+function validateListingId(id) {
+  if (typeof id !== 'string' || id.length === 0) return 'listing id is required';
+  if (id.length > LISTING_ID_MAX) return `listing id must be at most ${LISTING_ID_MAX} characters`;
+  if (!/^[A-Za-z0-9_-]+$/.test(id)) return 'listing id must contain only letters, numbers, hyphens and underscores';
+  return null;
+}
 
 function validateQuery(req) {
   const { page, limit, offset, minPrice, maxPrice, beds, baths, category, zipcode } = req.query;
@@ -94,28 +128,63 @@ app.get('/api/properties', async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
+// Registered before '/api/properties/:id'. Express matches routes in the order
+// they are defined, so if '/:id' came first it would match '/ABC123/openhouses'
+// (or fail outright) and this handler would never run.
+app.get('/api/properties/:id/openhouses', async (req, res) => {
+  const idError = validateListingId(req.params.id);
+  if (idError) return res.status(400).json({ error: 'Invalid listing id', details: [idError] });
+  try {
+    const [[property]] = await pool.query(
+      'SELECT L_ListingID id FROM rets_property WHERE L_ListingID = ? LIMIT 1', [req.params.id]);
+    if (!property) {
+      return res.status(404).json({ error: `No property found with listing id '${req.params.id}'` });
+    }
+    const [rows] = await pool.query(
+      `SELECT OpenHouseDate date, OH_StartTime startTime, OH_EndTime endTime, all_data FROM rets_openhouse
+       WHERE L_ListingID = ? ORDER BY OpenHouseDate, OH_StartTime`, [req.params.id]);
+    // A property with no scheduled open houses is normal: return [], not an error.
+    res.json(rows.map(toOpenHouse));
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
 app.get('/api/properties/:id', async (req, res) => {
+  const idError = validateListingId(req.params.id);
+  if (idError) return res.status(400).json({ error: 'Invalid listing id', details: [idError] });
   try {
     const [rows] = await pool.query(
       `SELECT ${SUMMARY}, L_Remarks remarks, LotSizeAcres lotAcres FROM rets_property WHERE L_ListingID = ?`, [req.params.id]);
-    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    if (!rows.length) {
+      return res.status(404).json({ error: `No property found with listing id '${req.params.id}'` });
+    }
     const p = rows[0]; p.photos = parsePhotos(p.photos); p.forRent = RENTAL_TYPES.includes(p.type);
     const [oh] = await pool.query(
       `SELECT OpenHouseDate date, OH_StartTime startTime, OH_EndTime endTime, all_data FROM rets_openhouse
-       WHERE L_ListingID = ? AND OpenHouseDate >= CURDATE() ORDER BY OpenHouseDate`, [req.params.id]);
-    p.openHouses = oh.map(({ all_data, ...o }) => {
-      let remarks = null; try { remarks = JSON.parse(all_data).OpenHouseRemarks || null; } catch {}
-      return { ...o, remarks };
-    });
+       WHERE L_ListingID = ? AND OpenHouseDate >= CURDATE() ORDER BY OpenHouseDate, OH_StartTime`, [req.params.id]);
+    p.openHouses = oh.map(toOpenHouse);
     res.json(p);
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
 app.get('/api/cities', async (req, res) => {
-  const [rows] = await pool.query(
-    "SELECT L_City city, COUNT(*) n FROM rets_property WHERE L_Status='Active' AND L_City<>'' GROUP BY L_City ORDER BY n DESC LIMIT 100");
-  res.json(rows);
+  try {
+    const [rows] = await pool.query(
+      "SELECT L_City city, COUNT(*) n FROM rets_property WHERE L_Status='Active' AND L_City<>'' GROUP BY L_City ORDER BY n DESC LIMIT 100");
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
+
+app.use('/api', (req, res) => res.status(404).json({ error: `Unknown endpoint: ${req.method} ${req.originalUrl}` }));
+
+// Last-resort handler so a throw anywhere above becomes a logged 500 instead of
+// an unhandled rejection that takes the process down.
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'Server error' });
+});
+
+process.on('unhandledRejection', (reason) => console.error('Unhandled promise rejection:', reason));
 
 module.exports = app;
 if (require.main === module) app.listen(process.env.PORT || 5000, () => console.log('API on', process.env.PORT || 5000));

@@ -50,7 +50,12 @@ Check http://localhost:5001/api/health -> `{"status":"ok","database":"connected"
 (Port 5000 is avoided because macOS AirPlay uses it.)
 
 Endpoints: `GET /api/health`, `GET /api/properties`, `GET /api/properties/map`,
-`GET /api/properties/:id`, `GET /api/cities`.
+`GET /api/properties/:id`, `GET /api/properties/:id/openhouses`, `GET /api/cities`.
+
+`GET /api/properties/:id/openhouses` returns the property's open house events ordered by
+date and start time; a property with none scheduled returns `[]` rather than an error, and
+an unknown listing ID returns 404. Both `:id` routes reject malformed or oversized listing
+IDs with a 400. Every request logs a line with method, URL, status code and duration.
 
 `GET /api/properties` and `/api/properties/map` accept `category=rent` (or `sale`) to
 scope results to lease vs. for-sale listings, based on `L_Type_`. Which type strings count

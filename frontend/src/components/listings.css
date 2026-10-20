@@ -1,0 +1,24 @@
+.lp { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; font-family: system-ui, -apple-system, sans-serif; color: #1a1a2e; }
+.lp h1 { margin: 0 0 16px; font-size: 28px; }
+
+.lp-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; background: #f6f7fb; padding: 16px; border-radius: 12px; margin-bottom: 16px; }
+.lp-filters label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+.lp-filters input, .lp-filters select { height: 38px; border: 1px solid #cdcdd3; border-radius: 8px; padding: 0 10px; font: inherit; font-weight: 400; background: #fff; }
+.lp-actions { display: flex; gap: 8px; }
+.lp-actions button { flex: 1; height: 38px; border: 0; border-radius: 8px; background: #0041d9; color: #fff; font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; padding: 0 12px; }
+.lp-actions button.secondary { background: #fff; color: #0041d9; border: 1px solid #0041d9; }
+
+.lp-status, .lp-count { color: #535364; margin: 8px 0 16px; }
+.lp-error { background: #fdecec; color: #a11; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }
+.lp-empty { background: #f6f7fb; border-radius: 8px; padding: 24px; text-align: center; color: #535364; }
+
+.lp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+.lp-card { display: block; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); color: inherit; text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.lp-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16); }
+.lp-photo { aspect-ratio: 3 / 2; background: #e4e6ee; display: flex; align-items: center; justify-content: center; color: #8a8a99; font-size: 14px; }
+.lp-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lp-body { padding: 12px 14px 14px; }
+.lp-price { font-size: 20px; font-weight: 800; }
+.lp-stats { font-size: 14px; margin: 4px 0; }
+.lp-addr { font-size: 14px; }
+.lp-city { font-size: 13px; color: #535364; }

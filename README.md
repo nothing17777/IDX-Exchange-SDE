@@ -73,6 +73,26 @@ npm run dev
 Open the URL Vite prints (http://localhost:3000, or 3001 if 3000 is taken).
 Vite proxies `/api` to `http://localhost:5001` (see `frontend/vite.config.js`).
 
+The Week 5/6 listings page with filters is at http://localhost:3000/listings
+(`frontend/src/components/ListingsPage.jsx`, `PropertyCard.jsx`, `PropertyFilters.jsx`;
+API calls go through `frontend/src/api/client.js`).
+
+## 4. Run the tests
+```bash
+cd frontend
+npm test
+```
+Vitest + Testing Library, with `fetch` mocked via `vi.fn()` so tests never hit a real server.
+
+- **Week 5 debug (broken photos):** 211 rows have `L_Photos = ''` (the rest are valid JSON
+  arrays). `JSON.parse('')` throws, so `firstPhoto()` in `components/photos.js` treats
+  null / empty / malformed / non-array values as "no photo", and `PropertyCard` falls back to
+  a placeholder if an image URL fails to load.
+- **Week 6 debug (stale results flash):** each search starts a fetch; if an older request
+  resolves after a newer one, its results overwrite the newer ones. `ListingsPage` aborts the
+  previous request (`AbortController` in the effect cleanup) and clears results while loading.
+  `ListingsPage.test.jsx` reproduces the Search → Clear → Search race.
+
 ## Notes
 - Never commit `.env` or the SQL files.
 - Listing data is MLS data; use it only as your IDX Exchange access permits.

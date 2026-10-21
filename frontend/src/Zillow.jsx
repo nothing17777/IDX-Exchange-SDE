@@ -52,7 +52,7 @@ function SearchBox({ className, placeholder }) {
   const [q, setQ] = useState('')
   return <form className={className} onSubmit={(e) => { e.preventDefault(); location.href = '/for-sale?q=' + encodeURIComponent(q) }}>
     <input style={{ border: 0, outline: 0, flex: 1, font: 'inherit' }} placeholder={placeholder} value={q} onChange={(e) => setQ(e.target.value)} />
-    <span style={{ color: '#111', fontSize: 18 }}>⌕</span>
+    <span style={{ color: 'var(--c-ink)', fontSize: 18 }}>⌕</span>
   </form>
 }
 
@@ -67,7 +67,7 @@ export function Home() {
         <div className="ph" style={{ backgroundImage: p.photos[0] ? `url(${p.photos[0]})` : 'none' }}>{p.nextOpen && <span className="badge">{fmtOpen(p.nextOpen)}</span>}</div>
         <div className="in"><b>{usd(p.price)}</b><small>{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft &nbsp; Active</small><small>{p.address}, {p.city}, {p.state}, {p.zip}</small><div className="mls">MLS listing. Listing provided by CRMLS</div></div></Link>)}</div></section>
     <section className="sec" style={{ paddingTop: 38 }}><h5>Find homes you can afford with BuyAbility℠</h5><div className="sub">Answer a few questions. We'll highlight homes you're likely to qualify for.</div>
-      <div className="ba"><div className="bab"><small style={{ fontWeight: 700, color: '#0041D9' }}>IDX Exchange Home Loans</small><div className="g"><div><b>$ - -</b>Target home price</div><div><b>$ - -</b>Max home price</div><div><b>$ -- /mo</b>Target payment</div><div><b>-- %</b>Your est. rate</div></div><Link className="blue" to="/mortgage">Get your BuyAbility</Link></div>
+      <div className="ba"><div className="bab"><small style={{ fontWeight: 700, color: 'var(--c-link)' }}>IDX Exchange Home Loans</small><div className="g"><div><b>$ - -</b>Target home price</div><div><b>$ - -</b>Max home price</div><div><b>$ -- /mo</b>Target payment</div><div><b>-- %</b>Your est. rate</div></div><Link className="blue" to="/mortgage">Get your BuyAbility</Link></div>
         {['2024/10/2017_ZillowExteriors_218-1.jpg', '2024/10/GettyImages-472069091-Edit.jpg', '2024/10/shutterstock_529108441.jpg'].map((x) => <div key={x} className="pc sk"><div className="ph" style={{ backgroundImage: `url(${Z}bedrock/app/uploads/sites/5/${x})` }}><span className="badge" style={{ background: '#0041D9' }}>Within BuyAbility</span></div><div className="l" /><div className="l" style={{ width: '70%' }} /><div className="l" style={{ width: '60%' }} /></div>)}</div></section>
     <div className="more">↓ More recommended homes</div>
     <section className="gray">{cards.map((c) => <div key={c[0]} className="rc"><img src={`${Z}bedrock/app/uploads/sites/55/2025/04/${c[4]}.webp`} alt="" /><h4>{c[0]}</h4><p>{c[1]}</p><Link className="out" to={'/' + c[3]}>{c[2]}</Link>{c[0][0] === 'F' && null}</div>)}</section>
@@ -109,7 +109,7 @@ export function ForSale() {
           <div className="in"><div className="price">{usd(p.price)}</div>
             <div className="meta">{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | {p.type?.replace(/([A-Z])/g, ' $1').trim()} for sale</div>
             <div className="addr">{p.address}, {p.city}, {p.state} {p.zip}</div>
-            {p.nextOpen && <div className="broker" style={{ color: '#d13b09' }}>{fmtOpen(p.nextOpen)}</div>}</div></Link>)}</div>
+            {p.nextOpen && <div className="broker" style={{ color: 'var(--c-hot)' }}>{fmtOpen(p.nextOpen)}</div>}</div></Link>)}</div>
         {d && <div style={{ display: 'flex', gap: 14, justifyContent: 'center', alignItems: 'center', margin: '28px 0', fontSize: 14 }}>
           <button className="chip" disabled={page <= 1} onClick={() => go(page - 1)}>‹ Prev</button><span>Page {page} of {d.pages}</span><button className="chip" disabled={page >= d.pages} onClick={() => go(page + 1)}>Next ›</button></div>}
       </div>
@@ -151,8 +151,8 @@ export function ForRent() {
           <div className="in"><div className="price">{usd(p.price)}/mo</div>
             <div className="meta">{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | {p.type?.replace(/([A-Z])/g, ' $1').trim()} for rent</div>
             <div className="addr">{p.address}, {p.city}, {p.state} {p.zip}</div>
-            {p.nextOpen && <div className="broker" style={{ color: '#d13b09' }}>{fmtOpen(p.nextOpen)}</div>}</div></Link>)}</div>
-        {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: '#535364' }}>No rentals match your search yet — try widening your filters.</div>}
+            {p.nextOpen && <div className="broker" style={{ color: 'var(--c-hot)' }}>{fmtOpen(p.nextOpen)}</div>}</div></Link>)}</div>
+        {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: 'var(--c-mute)' }}>No rentals match your search yet — try widening your filters.</div>}
         {d && d.results.length > 0 && <div style={{ display: 'flex', gap: 14, justifyContent: 'center', alignItems: 'center', margin: '28px 0', fontSize: 14 }}>
           <button className="chip" disabled={page <= 1} onClick={() => go(page - 1)}>‹ Prev</button><span>Page {page} of {d.pages}</span><button className="chip" disabled={page >= d.pages} onClick={() => go(page + 1)}>Next ›</button></div>}
       </div>
@@ -166,16 +166,16 @@ export function Detail() {
   useEffect(() => { fetch('/api/properties/' + id).then((r) => (r.ok ? r.json() : Promise.reject())).then(setP).catch(() => setErr(true)) }, [id])
   return <Shell sale>
     <div style={{ maxWidth: 1100, margin: 'auto', padding: 20 }}>
-      <Link to={p?.forRent ? '/rent' : '/for-sale'} style={{ color: '#0041D9', fontWeight: 700 }}>← Back to search</Link>
+      <Link to={p?.forRent ? '/rent' : '/for-sale'} style={{ color: 'var(--c-link)', fontWeight: 700 }}>← Back to search</Link>
       {err && <p>Listing not found.</p>}
       {!p && !err && <Spinner />}
       {p && <>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 6, height: 400, borderRadius: 12, overflow: 'hidden', margin: '12px 0' }}>
-          {p.photos.slice(0, 5).map((u, i) => <div key={i} style={{ background: `#ddd url(${u}) center/cover`, gridRow: i === 0 ? 'span 2' : 'auto' }} />)}</div>
+          {p.photos.slice(0, 5).map((u, i) => <div key={i} style={{ background: `var(--c-ph) url(${u}) center/cover`, gridRow: i === 0 ? 'span 2' : 'auto' }} />)}</div>
         <div style={{ fontSize: 32, fontWeight: 800 }}>{usd(p.price)}{p.forRent ? '/mo' : ''}</div>
         <div style={{ fontWeight: 600 }}>{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | Built {p.yearBuilt}</div>
         <h3>{p.address}, {p.city}, {p.state} {p.zip}</h3><p>{p.remarks}</p>
-        {p.openHouses.length > 0 && <><h3>Open houses</h3>{p.openHouses.map((o, i) => <div key={i} style={{ background: '#eef2ff', borderRadius: 8, padding: '10px 14px', margin: '8px 0', fontSize: 14 }}><b>{new Date(String(o.date).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</b> {o.startTime.slice(0, 5)}-{o.endTime.slice(0, 5)}{o.remarks ? ` — ${o.remarks}` : ''}</div>)}</>}
+        {p.openHouses.length > 0 && <><h3>Open houses</h3>{p.openHouses.map((o, i) => <div key={i} style={{ background: 'var(--c-tint)', borderRadius: 8, padding: '10px 14px', margin: '8px 0', fontSize: 14 }}><b>{new Date(String(o.date).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</b> {o.startTime.slice(0, 5)}-{o.endTime.slice(0, 5)}{o.remarks ? ` — ${o.remarks}` : ''}</div>)}</>}
         {p.lat && <iframe title="map" style={{ width: '100%', height: 320, border: 0, borderRadius: 12, marginTop: 20 }} src={`https://maps.google.com/maps?q=${p.lat},${p.lng}&z=15&output=embed`} />}
       </>}
     </div>
@@ -188,7 +188,7 @@ function Mortgage() {
   const [price, setPrice] = useState(800000), [down, setDown] = useState(20), [rate, setRate] = useState(6.5), [years, setYears] = useState(30)
   const loan = price * (1 - down / 100), r = rate / 1200, n = years * 12
   const pay = r ? (loan * r) / (1 - Math.pow(1 + r, -n)) : loan / n
-  const fld = { height: 40, border: '1px solid #cdcdd3', borderRadius: 8, padding: '0 12px', font: 'inherit', width: '100%' }
+  const fld = { height: 40, border: '1px solid var(--c-line)', borderRadius: 8, padding: '0 12px', font: 'inherit', width: '100%' }
   const L = ({ t, children }) => <label style={{ display: 'block', fontSize: 13, fontWeight: 600 }}>{t}{children}</label>
   return <div style={{ maxWidth: 520, padding: '40px 32px', minHeight: 420 }}>
     <h1>Mortgage payment calculator</h1>
@@ -198,9 +198,9 @@ function Mortgage() {
       <L t="Interest rate (%)"><input style={fld} type="number" step="0.01" value={rate} onChange={(e) => setRate(+e.target.value)} /></L>
       <L t="Loan term"><select style={fld} value={years} onChange={(e) => setYears(+e.target.value)}><option value={30}>30 years</option><option value={20}>20 years</option><option value={15}>15 years</option></select></L>
     </div>
-    <div style={{ background: '#eef2ff', borderRadius: 12, padding: 20, marginTop: 20 }}>
-      <div style={{ fontSize: 13, color: '#535364' }}>Estimated monthly payment (principal &amp; interest)</div>
-      <div style={{ fontSize: 34, fontWeight: 800, color: '#0041D9' }}>{usd(Math.round(pay || 0))}/mo</div>
+    <div style={{ background: 'var(--c-tint)', borderRadius: 12, padding: 20, marginTop: 20 }}>
+      <div style={{ fontSize: 13, color: 'var(--c-mute)' }}>Estimated monthly payment (principal &amp; interest)</div>
+      <div style={{ fontSize: 34, fontWeight: 800, color: 'var(--c-link)' }}>{usd(Math.round(pay || 0))}/mo</div>
       <div style={{ fontSize: 13 }}>Loan amount {usd(Math.round(loan))}</div>
     </div>
   </div>
@@ -212,6 +212,6 @@ export function Simple() {
   const t = TITLES[page]
   return <Shell sale><div style={{ padding: '60px 32px', minHeight: 420 }}>
     <h1>{t || 'Page not found'}</h1>
-    {t && <p style={{ fontSize: 20, color: '#535364' }}>Coming soon.</p>}
+    {t && <p style={{ fontSize: 20, color: 'var(--c-mute)' }}>Coming soon.</p>}
     <Link className="save" style={{ display: 'inline-flex', width: 'fit-content' }} to="/">Back home</Link></div></Shell>
 }

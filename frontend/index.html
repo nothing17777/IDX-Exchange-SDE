@@ -5,6 +5,11 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IDX Exchange: Real Estate, Homes &amp; Mortgages</title>
+    <script>
+      // Set the theme before first paint so dark-mode users don't see a white flash.
+      try { document.documentElement.dataset.theme = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') }
+      catch { document.documentElement.dataset.theme = 'light' }
+    </script>
   </head>
   <body>
     <div id="root"></div>

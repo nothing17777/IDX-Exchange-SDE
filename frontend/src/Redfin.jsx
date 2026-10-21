@@ -104,7 +104,7 @@ export function RfRent() {
         <div className="cnt"><span>{d ? `${d.total.toLocaleString()} rentals` : 'Loading...'}</span>
           <select value={f.sort} onChange={sort}><option value="">Sort: Recommended</option><option value="price_asc">Rent (Low to High)</option><option value="price_desc">Rent (High to Low)</option></select></div>
         <div className="rfgrid">{!d && <Spinner />}{d?.results.map((p) => <Card key={p.id} p={p} />)}</div>
-        {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: '#535364' }}>No rentals match your search yet — try widening your filters.</div>}
+        {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: 'var(--c-mute)' }}>No rentals match your search yet — try widening your filters.</div>}
         {d && d.results.length > 0 && <div className="pg"><button disabled={page <= 1} onClick={() => go(page - 1)}>‹ Prev</button><span>Page {page} of {d.pages}</span><button disabled={page >= d.pages} onClick={() => go(page + 1)}>Next ›</button></div>}
       </div>
     </div>

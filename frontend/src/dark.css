@@ -1,0 +1,70 @@
+/* Dark theme: active when <html data-theme="dark">. Overrides the light palettes in the other stylesheets. */
+:root[data-theme=dark]{color-scheme:dark;--bg:#121218;--surface:#1c1c24;--surface2:#262630;--ink:#ececf1;--mute:#a6a6b5;--line:#35353f;
+  --c-ink:#ececf1;--c-mute:#a6a6b5;--c-line:#35353f;--c-tint:#1f2747;--c-link:#7fa4ff;--c-hot:#ff8a5c;--c-ph:#2a2a33}
+
+/* Shared */
+[data-theme=dark] body{background:var(--bg);color:var(--ink)}
+[data-theme=dark] .logo img,[data-theme=dark] .rflogo img,[data-theme=dark] .bot img{filter:invert(1) hue-rotate(180deg);mix-blend-mode:screen}
+[data-theme=dark] header .logo{background:var(--surface)}
+[data-theme=dark] .spin{border-color:var(--surface2);border-top-color:#7fa4ff}
+[data-theme=dark] .siteswitch{border-color:var(--ink)}
+[data-theme=dark] .siteswitch a{background:var(--surface);color:var(--ink)}
+[data-theme=dark] .siteswitch a:not(.on):hover{background:var(--surface2);color:var(--ink)}
+[data-theme=dark] .leaflet-container{background:#1b1d22}
+[data-theme=dark] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9)}
+[data-theme=dark] .leaflet-control-zoom a,[data-theme=dark] .leaflet-control-attribution{background:var(--surface)!important;color:var(--ink)!important}
+[data-theme=dark] .pin{border-color:var(--surface)}
+
+/* Zillow-style pages */
+[data-theme=dark] .side,[data-theme=dark] header{background:var(--surface);color:var(--ink);border-color:var(--line)}
+[data-theme=dark] .side{color:var(--mute)}
+[data-theme=dark] .side svg{color:var(--ink)}
+[data-theme=dark] header a:hover{color:#7fa4ff}
+[data-theme=dark] .search{background:var(--surface);color:var(--mute)}
+[data-theme=dark] .search input{background:transparent;color:var(--ink)}
+[data-theme=dark] .sub,[data-theme=dark] .pc .mls,[data-theme=dark] .rec p,[data-theme=dark] .legal{color:var(--mute)}
+[data-theme=dark] .pc,[data-theme=dark] .card,[data-theme=dark] .rc{background:var(--surface);box-shadow:0 2px 8px #0008}
+[data-theme=dark] .pc small,[data-theme=dark] .card .meta,[data-theme=dark] .card .addr{color:var(--ink)}
+[data-theme=dark] .pc .ph,[data-theme=dark] .card .ph,[data-theme=dark] .rfc .ph,[data-theme=dark] .gal div{background-color:var(--c-ph)}
+[data-theme=dark] .card .heart{background:#0009;color:#fff}
+[data-theme=dark] .arrows span{border-color:var(--line)}
+[data-theme=dark] .bab,[data-theme=dark] .rc{border-color:var(--line)}
+[data-theme=dark] .sk div.l{background:var(--surface2)}
+[data-theme=dark] .more,[data-theme=dark] .legal a,[data-theme=dark] .fl a[style]{color:#7fa4ff!important}
+[data-theme=dark] .out{border-color:#7fa4ff;color:#7fa4ff}
+[data-theme=dark] .gray{background:var(--bg)}
+[data-theme=dark] .acc{border-color:var(--line)}
+[data-theme=dark] .filterbar,[data-theme=dark] .sale header,[data-theme=dark] .mapcol{border-color:var(--line)}
+[data-theme=dark] .searchbox,[data-theme=dark] .chip{border-color:var(--line);color:var(--ink);background:var(--surface)}
+[data-theme=dark] .searchbox input{background:transparent;color:var(--ink)}
+[data-theme=dark] .searchbox span,[data-theme=dark] .listcol .count{color:var(--mute)}
+[data-theme=dark] .chip.on{background:#1f2747;border-color:#7fa4ff;color:#7fa4ff}
+[data-theme=dark] .listcol .count select{background:var(--bg);color:var(--ink)}
+
+/* Redfin-style pages */
+[data-theme=dark] .rf{--ink:#ececf1;--mute:#a6a6b5;--line:#35353f}
+[data-theme=dark] .rfh,[data-theme=dark] .rffilters,[data-theme=dark] .rfc,[data-theme=dark] .rfsearch{background:var(--surface)}
+[data-theme=dark] .rfsearch input{background:transparent;color:var(--ink)}
+[data-theme=dark] .tabs button.on{background:var(--surface);color:var(--ink)}
+[data-theme=dark] .rfsec.alt{background:var(--bg)}
+[data-theme=dark] .rfc:hover{box-shadow:0 4px 14px #000a}
+[data-theme=dark] .rfc .tag{background:var(--surface2);color:var(--ink)}
+[data-theme=dark] .rffilters input,[data-theme=dark] .rffilters select,[data-theme=dark] .pg button,[data-theme=dark] .cnt select{background:var(--surface2);color:var(--ink);border-color:var(--line)}
+[data-theme=dark] .oh{background:#3a1d1f}
+
+/* Listings page (Week 5/6) */
+[data-theme=dark] .lp{color:var(--ink)}
+[data-theme=dark] .lp-filters,[data-theme=dark] .lp-empty{background:var(--surface)}
+[data-theme=dark] .lp-filters input,[data-theme=dark] .lp-filters select{background:var(--surface2);color:var(--ink);border-color:var(--line)}
+[data-theme=dark] .lp-actions button{background:#3d6bff}
+[data-theme=dark] .lp-actions button.secondary{background:transparent;color:#7fa4ff;border-color:#7fa4ff}
+[data-theme=dark] .lp-status,[data-theme=dark] .lp-count,[data-theme=dark] .lp-empty,[data-theme=dark] .lp-city{color:var(--mute)}
+[data-theme=dark] .lp-error{background:#3a1d1f;color:#ff9b9b}
+[data-theme=dark] .lp-card{background:var(--surface);box-shadow:0 1px 3px #0008}
+[data-theme=dark] .lp-card:hover{box-shadow:0 8px 24px #000a}
+[data-theme=dark] .lp-photo{background:var(--surface2);color:var(--mute)}
+
+/* Toggle button */
+.theme-toggle{position:fixed;right:18px;bottom:18px;z-index:10000;width:44px;height:44px;border-radius:50%;border:1px solid #cdcdd3;background:#fff;color:#111;font-size:20px;cursor:pointer;box-shadow:0 2px 10px #0003;display:flex;align-items:center;justify-content:center}
+.theme-toggle:hover{transform:scale(1.06)}
+[data-theme=dark] .theme-toggle{background:var(--surface2);color:#ffd76a;border-color:var(--line);box-shadow:0 2px 10px #000a}

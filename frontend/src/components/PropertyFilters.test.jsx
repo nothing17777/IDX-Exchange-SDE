@@ -41,6 +41,32 @@ describe('PropertyFilters', () => {
     expect(screen.getByLabelText('Baths')).toHaveValue('')
   })
 
+  it('Clear Filters notifies the parent even with nothing filled in', async () => {
+    const { onClear, onSearch, user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Clear Filters' }))
+    expect(onClear).toHaveBeenCalledTimes(1)
+    expect(onSearch).not.toHaveBeenCalled()
+  })
+
+  it('searches with empty filters after a Search then Clear sequence', async () => {
+    const { onSearch, user } = setup()
+    await user.type(screen.getByLabelText('City'), 'Irvine')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+    await user.click(screen.getByRole('button', { name: 'Clear Filters' }))
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+    expect(onSearch).toHaveBeenLastCalledWith(EMPTY_FILTERS)
+  })
+
+  it('keeps filters independent across repeated Clear/Search cycles', async () => {
+    const { onSearch, user } = setup()
+    await user.type(screen.getByLabelText('ZIP code'), '92618')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+    await user.click(screen.getByRole('button', { name: 'Clear Filters' }))
+    await user.selectOptions(screen.getByLabelText('Beds'), '4')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+    expect(onSearch).toHaveBeenLastCalledWith({ ...EMPTY_FILTERS, beds: '4' })
+  })
+
   it('submits via the Enter key', async () => {
     const { onSearch, user } = setup()
     await user.type(screen.getByLabelText('ZIP code'), '92618{Enter}')

@@ -30,6 +30,64 @@ describe('ListingsPage', () => {
     expect(await screen.findByText('Showing 1 of 487 properties')).toBeInTheDocument()
   })
 
+  it('sends all six filters to the API and renders the matching results', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    pending[0].respond(page('Initial'))
+    await screen.findByText('Initial')
+
+    await user.type(screen.getByLabelText('City'), 'Irvine')
+    await user.type(screen.getByLabelText('ZIP code'), '92618')
+    await user.type(screen.getByLabelText('Min price'), '400000')
+    await user.type(screen.getByLabelText('Max price'), '900000')
+    await user.selectOptions(screen.getByLabelText('Beds'), '3')
+    await user.selectOptions(screen.getByLabelText('Baths'), '2')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+
+    const req = pending[pending.length - 1]
+    for (const part of ['city=Irvine', 'zipcode=92618', 'minPrice=400000', 'maxPrice=900000', 'beds=3', 'baths=2']) {
+      expect(req.url).toContain(part)
+    }
+    req.respond(page('Filtered result'))
+    expect(await screen.findByText('Filtered result')).toBeInTheDocument()
+    expect(screen.queryByText('Initial')).not.toBeInTheDocument()
+  })
+
+  it('refetches without filters after Clear Filters', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    pending[0].respond(page('Initial'))
+    await screen.findByText('Initial')
+
+    await user.type(screen.getByLabelText('City'), 'Irvine')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+    await user.click(screen.getByRole('button', { name: 'Clear Filters' }))
+
+    const req = pending[pending.length - 1]
+    expect(req.url).not.toContain('city=')
+    req.respond(page('Unfiltered result'))
+    expect(await screen.findByText('Unfiltered result')).toBeInTheDocument()
+  })
+
+  it('shows an empty-result message when no property matches the filters', async () => {
+    renderPage()
+    pending[0].respond({ total: 0, results: [] })
+    expect(await screen.findByText(/No properties match these filters/)).toBeInTheDocument()
+    expect(screen.getByText('Showing 0 of 0 properties')).toBeInTheDocument()
+  })
+
+  it('shows an error instead of results when the request fails', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'Invalid query parameters', details: ['minPrice must not exceed maxPrice'] }),
+    })
+    renderPage()
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Invalid query parameters: minPrice must not exceed maxPrice')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
   it('never shows results from a search that was superseded by Clear + a new search', async () => {
     const user = userEvent.setup()
     renderPage()

@@ -21,6 +21,25 @@ describe('api client', () => {
     expect(buildQuery({ city: '' })).toBe('')
   })
 
+  it('sends every filter in a full six-filter combination', async () => {
+    fetch.mockResolvedValue(jsonResponse(200, { total: 0, results: [] }))
+    await fetchProperties({ city: 'Irvine', zipcode: '92618', minPrice: '400000', maxPrice: '900000', beds: '3', baths: '2' })
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/properties?city=Irvine&zipcode=92618&minPrice=400000&maxPrice=900000&beds=3&baths=2',
+      expect.any(Object),
+    )
+  })
+
+  it('trims and encodes filter values', async () => {
+    expect(buildQuery({ city: '  San Juan Capistrano  ' })).toBe('?city=San+Juan+Capistrano')
+  })
+
+  it('requests the bare endpoint when every filter is cleared', async () => {
+    fetch.mockResolvedValue(jsonResponse(200, { total: 0, results: [] }))
+    await fetchProperties({ city: '', zipcode: '', minPrice: '', maxPrice: '', beds: '', baths: '' })
+    expect(fetch).toHaveBeenCalledWith('/api/properties', expect.any(Object))
+  })
+
   it('throws the server error message and details on a 4xx response', async () => {
     fetch.mockResolvedValue(jsonResponse(400, { error: 'Invalid query parameters', details: ['minPrice must not exceed maxPrice'] }))
     const err = await fetchProperties({ minPrice: 9, maxPrice: 1 }).catch((e) => e)

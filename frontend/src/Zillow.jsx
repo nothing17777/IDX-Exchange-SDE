@@ -75,6 +75,29 @@ export function Home() {
   </Shell>
 }
 
+export function Pager({ page, pages, onGo }) {
+  const [jump, setJump] = useState('')
+  if (!pages || pages <= 1) return null
+  const submit = (e) => {
+    e.preventDefault()
+    const t = Number(jump)
+    // Ignore a typo or a page past the end rather than loading an empty grid.
+    if (!Number.isInteger(t) || t < 1 || t > pages) return
+    setJump('')
+    onGo(t)
+  }
+  return <div style={{ display: 'flex', gap: 14, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', margin: '28px 0', fontSize: 14 }}>
+    <button className="chip" disabled={page <= 1} onClick={() => onGo(page - 1)}>&lsaquo; Prev</button>
+    <span>Page {page} of {pages.toLocaleString()}</span>
+    <button className="chip" disabled={page >= pages} onClick={() => onGo(page + 1)}>Next &rsaquo;</button>
+    <form onSubmit={submit} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <label htmlFor="z-jump">Go to page</label>
+      <input id="z-jump" className="chip" style={{ width: 90 }} type="number" min="1" max={pages} value={jump} onChange={(e) => setJump(e.target.value)} placeholder={String(page)} />
+      <button className="chip" type="submit">Go</button>
+    </form>
+  </div>
+}
+
 export function ForSale() {
   const [sp, setSp] = useSearchParams()
   const [d, setD] = useState(null)
@@ -110,8 +133,8 @@ export function ForSale() {
             <div className="meta">{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | {p.type?.replace(/([A-Z])/g, ' $1').trim()} for sale</div>
             <div className="addr">{p.address}, {p.city}, {p.state} {p.zip}</div>
             {p.nextOpen && <div className="broker" style={{ color: 'var(--c-hot)' }}>{fmtOpen(p.nextOpen)}</div>}</div></Link>)}</div>
-        {d && <div style={{ display: 'flex', gap: 14, justifyContent: 'center', alignItems: 'center', margin: '28px 0', fontSize: 14 }}>
-          <button className="chip" disabled={page <= 1} onClick={() => go(page - 1)}>‹ Prev</button><span>Page {page} of {d.pages}</span><button className="chip" disabled={page >= d.pages} onClick={() => go(page + 1)}>Next ›</button></div>}
+        {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: 'var(--c-mute)' }}>No homes match your search yet — try widening your filters.</div>}
+        {d && <Pager page={page} pages={d.pages} onGo={go} />}
       </div>
     </div>
   </Shell>
@@ -153,8 +176,7 @@ export function ForRent() {
             <div className="addr">{p.address}, {p.city}, {p.state} {p.zip}</div>
             {p.nextOpen && <div className="broker" style={{ color: 'var(--c-hot)' }}>{fmtOpen(p.nextOpen)}</div>}</div></Link>)}</div>
         {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: 'var(--c-mute)' }}>No rentals match your search yet — try widening your filters.</div>}
-        {d && d.results.length > 0 && <div style={{ display: 'flex', gap: 14, justifyContent: 'center', alignItems: 'center', margin: '28px 0', fontSize: 14 }}>
-          <button className="chip" disabled={page <= 1} onClick={() => go(page - 1)}>‹ Prev</button><span>Page {page} of {d.pages}</span><button className="chip" disabled={page >= d.pages} onClick={() => go(page + 1)}>Next ›</button></div>}
+        {d && <Pager page={page} pages={d.pages} onGo={go} />}
       </div>
     </div>
   </Shell>

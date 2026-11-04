@@ -1,13 +1,16 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import Pagination from './Pagination.jsx'
+import Pagination, { pageItems } from './Pagination.jsx'
 
 const setup = (props) => {
   const onPageChange = vi.fn()
   render(<Pagination page={1} pages={5} onPageChange={onPageChange} {...props} />)
   return { onPageChange, user: userEvent.setup() }
 }
+
+const pageNumbers = () =>
+  screen.getAllByRole('button', { name: /^Page \d+$/ }).map((b) => b.textContent)
 
 describe('Pagination', () => {
   it('reports the current page and total', () => {
@@ -68,6 +71,65 @@ describe('Pagination', () => {
     await user.clear(box)
     await user.type(box, '-2{Enter}')
     expect(onPageChange).not.toHaveBeenCalled()
+  })
+
+
+  it('renders every page number when they all fit', () => {
+    setup({ page: 2, pages: 5 })
+    expect(screen.getAllByRole('button', { name: /^Page \d+$/ }).map((b) => b.textContent))
+      .toEqual(['1', '2', '3', '4', '5'])
+    expect(screen.queryByText('…')).not.toBeInTheDocument()
+  })
+
+  it('marks the current page number', () => {
+    setup({ page: 3, pages: 9 })
+    expect(screen.getByRole('button', { name: 'Page 3' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'Page 4' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('navigates to a clicked page number', async () => {
+    const { onPageChange, user } = setup({ page: 12, pages: 24 })
+    await user.click(screen.getByRole('button', { name: 'Page 13' }))
+    expect(onPageChange).toHaveBeenCalledWith(13)
+  })
+
+  it('trails a single ellipsis on the first page of a long list', () => {
+    setup({ page: 1, pages: 24 })
+    expect(pageNumbers()).toEqual(['1', '2', '3', '4', '5', '24'])
+    expect(screen.getAllByText('…')).toHaveLength(1)
+  })
+
+  it('brackets the current page with two ellipses in the middle', () => {
+    setup({ page: 12, pages: 24 })
+    expect(pageNumbers()).toEqual(['1', '11', '12', '13', '24'])
+    expect(screen.getAllByText('…')).toHaveLength(2)
+  })
+
+  it('leads with a single ellipsis near the end of a long list', () => {
+    setup({ page: 23, pages: 24 })
+    expect(pageNumbers()).toEqual(['1', '20', '21', '22', '23', '24'])
+    expect(screen.getAllByText('…')).toHaveLength(1)
+  })
+
+  // Regression: near the end the last page used to be emitted twice, rendering
+  // "1 … 2 3 4 … 1" instead of a run ending at the real last page.
+  it('never repeats a page number at any position in a long list', () => {
+    for (let page = 1; page <= 24; page += 1) {
+      const items = pageItems(page, 24).filter((i) => typeof i === 'number')
+      expect(new Set(items).size).toBe(items.length)
+      expect(items).toEqual([...items].sort((a, b) => a - b))
+      expect(items[0]).toBe(1)
+      expect(items[items.length - 1]).toBe(24)
+      expect(items).toContain(page)
+    }
+  })
+
+  it('keeps the current page inside the visible window on every page', () => {
+    for (const pages of [8, 9, 20, 24, 100]) {
+      for (let page = 1; page <= pages; page += 1) {
+        expect(pageItems(page, pages)).toContain(page)
+      }
+    }
   })
 
   it('renders nothing when there is only one page of results', () => {

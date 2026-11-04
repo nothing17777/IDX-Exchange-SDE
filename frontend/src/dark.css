@@ -73,3 +73,13 @@
 [data-theme=dark] .lp-pager-status{color:var(--mute)}
 [data-theme=dark] .lp-jump{color:var(--mute)}
 [data-theme=dark] .lp-jump input{background:var(--surface2);color:var(--ink);border-color:var(--line)}
+[data-theme=dark] .lp-per-page{color:var(--mute)}
+[data-theme=dark] .lp-per-page select{background:var(--surface2);color:var(--ink);border-color:var(--line)}
+[data-theme=dark] .lp-pager .lp-page.is-current{background:#3d6bff;color:#fff;border-color:#3d6bff}
+[data-theme=dark] .lp-gap{color:var(--mute)}
+[data-theme=dark] .lp-arrow{background:#0009;color:#fff}
+[data-theme=dark] .pd-address,[data-theme=dark] .pd-no-open,[data-theme=dark] .pd-oh-remarks,[data-theme=dark] .pd-stats dt,[data-theme=dark] .pd-details dt{color:var(--mute)}
+[data-theme=dark] .pd-back,[data-theme=dark] .pd-directions{color:#7fa4ff}
+[data-theme=dark] .pd-stats,[data-theme=dark] .pd-oh{background:var(--surface)}
+[data-theme=dark] .pd-main,[data-theme=dark] .pd-thumb,[data-theme=dark] .pd-gallery-empty{background:var(--surface2)}
+[data-theme=dark] .pd-thumb.is-current{border-color:#7fa4ff}

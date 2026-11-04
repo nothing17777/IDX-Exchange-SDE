@@ -30,6 +30,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 const parsePhotos = (s) => { try { return JSON.parse(s) || []; } catch { return []; } };
+const CARD_PHOTOS = 8;
 
 // all_data is a JSON blob in the MLS feed; it is not always valid JSON and is
 // not always an object (some rows hold a bare string or null), so every access
@@ -123,7 +124,9 @@ app.get('/api/properties', async (req, res) => {
     const [rows] = await pool.query(
       `SELECT ${SUMMARY} FROM rets_property WHERE ${w} ORDER BY ${sorts[req.query.sort] || sorts.newest} LIMIT ? OFFSET ?`,
       [...args, limit, offset]);
-    rows.forEach((r) => { r.photos = parsePhotos(r.photos).slice(0, 1); r.forRent = RENTAL_TYPES.includes(r.type); });
+    // The cards carousel through photos, so send a few rather than just the
+    // cover shot — capped so a 40-photo listing cannot bloat the page payload.
+    rows.forEach((r) => { r.photos = parsePhotos(r.photos).slice(0, CARD_PHOTOS); r.forRent = RENTAL_TYPES.includes(r.type); });
     res.json({ total, limit, offset, page: Math.floor(offset / limit) + 1, pages: Math.ceil(total / limit), results: rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });

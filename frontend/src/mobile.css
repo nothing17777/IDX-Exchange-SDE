@@ -1,0 +1,180 @@
+/* Phone and small-tablet layout.
+ *
+ * The desktop stylesheets are built around three things a narrow screen cannot
+ * afford: a fixed 52px icon rail the content is pushed off, a map column
+ * sitting beside the results, and several fixed-column grids. Each is undone
+ * here rather than rewritten, so the desktop rules stay the single source of
+ * truth for anything wider than this breakpoint.
+ *
+ * Loaded last so these rules win on specificity ties.
+ */
+
+/* Nothing should be able to push the page wider than the viewport. */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, iframe { max-width: 100%; }
+
+@media (max-width: 768px) {
+  /* --- Shared chrome ------------------------------------------------ */
+
+  /* The icon rail is decoration; drop it and reclaim its 52px gutter. */
+  .side { display: none; }
+  .wrap { margin-left: 0; }
+
+  /* The header is absolutely positioned and centres the logo on top of two
+     navs. On a phone it becomes an ordinary stacked block: logo on its own
+     row, the link rows swipeable instead of overflowing. */
+  header {
+    position: static;
+    left: 0;
+    right: 0;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  header .logo {
+    position: static;
+    left: auto;
+    transform: none;
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+  header .logo img { height: 28px; width: auto; }
+  header nav,
+  header nav.r {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    gap: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  header nav::-webkit-scrollbar, header nav.r::-webkit-scrollbar { display: none; }
+  header nav a { white-space: nowrap; padding: 6px 0; }
+  .siteswitch { margin-right: 0; }
+
+  /* --- Zillow home ------------------------------------------------- */
+
+  .hero { margin-top: 0; height: auto; padding: 28px 16px 32px; }
+  .hero h1 { font-size: 26px; margin-bottom: 20px; }
+  .search { width: 100%; }
+  .sec { padding: 0 16px; }
+
+  /* Card rails: the desktop clips the overflow, a phone swipes it. */
+  .row {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+  }
+  .row > * { scroll-snap-align: start; }
+  .pc, .sk { flex: 0 0 78%; }
+  .arrows { display: none; }
+
+  .ba { flex-direction: column; }
+  .bab { flex: 1 1 auto; }
+
+  /* Fixed-column grids collapse to one (or two for short labels). */
+  .gray { grid-template-columns: 1fr; padding: 24px 16px; }
+  .rc { padding: 24px 16px; }
+  .acc { grid-template-columns: 1fr 1fr; gap: 12px 0; }
+  .rec { padding: 32px 16px 12px; }
+
+  /* --- Search results: map above the list, not beside it ----------- */
+
+  .results, .rfres { flex-direction: column; }
+  .mapcol, .rfmap {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 260px;
+    position: static;
+    top: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--c-line, #e2e2e6);
+  }
+  .listcol { padding: 16px; }
+  .rflist { padding: 16px; }
+  .grid, .sale .grid, .rfgrid, .three { grid-template-columns: 1fr; }
+  .listcol .count, .cnt { flex-wrap: wrap; gap: 4px 12px; }
+
+  /* Filter bars stay on one swipeable row so the controls keep their size. */
+  .filterbar, .rffilters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .searchbox { flex: 0 0 200px; }
+  .rffilters .q { width: 180px; }
+  .chip, .save { flex: none; }
+  .save { margin-left: 8px; }
+
+  /* --- Redfin home -------------------------------------------------- */
+
+  .rfh { height: auto; flex-wrap: wrap; gap: 12px; padding: 10px 12px; }
+  .rfh nav, .rfh nav.r {
+    flex: 1 1 100%;
+    margin-left: 0;
+    gap: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .rfh nav a { white-space: nowrap; }
+  .rfhero { height: auto; padding: 48px 16px; }
+  .rfhero h1 { font-size: 28px; }
+  .rfsearch { width: 100%; }
+  .rfsearch input { height: 48px; padding: 0 14px; }
+  .rfsearch button { height: 48px; padding: 0 18px; }
+  .rfsec { padding: 24px 16px; }
+
+  /* --- Property detail (shared by both skins) ---------------------- */
+
+  .pd, .rfdet { padding: 16px 12px 40px; }
+  .pd-price { font-size: 26px; }
+  .pd-address { font-size: 16px; }
+  /* Two readable columns beat four cramped ones. */
+  .pd-stats { grid-template-columns: 1fr 1fr; padding: 12px; }
+  .pd-stats dd { font-size: 16px; }
+  .pd-details dl { grid-template-columns: 1fr 1fr; }
+  .pd-main img { aspect-ratio: 4 / 3; }
+  .pd-thumb { width: 72px; height: 54px; }
+  .pd-map-frame, .rfdet iframe { height: 240px; }
+
+  /* Redfin's 3x2 photo mosaic has no room; show the hero photo alone. */
+  .gal { grid-template-columns: 1fr; grid-template-rows: 1fr; height: 220px; }
+  .gal div:not(:first-child) { display: none; }
+  .top { flex-direction: column; align-items: flex-start; }
+  .facts { gap: 18px; }
+  .facts b { font-size: 18px; }
+
+  /* Full-screen photo viewer: keep the controls inside the thumb's reach. */
+  .pd-lightbox button { width: 40px; height: 40px; }
+  .pd-close { top: 12px; right: 12px; }
+  .pd-lb-prev { left: 8px; }
+  .pd-lb-next { right: 8px; }
+  .pd-lb-img { max-width: 94vw; max-height: 72vh; }
+
+  /* --- Pagination --------------------------------------------------- */
+
+  .lp-pager, .pg { flex-wrap: wrap; justify-content: center; gap: 8px 12px; }
+  .lp-pages { flex-wrap: wrap; justify-content: center; }
+  .lp-jump { flex: 1 1 100%; justify-content: center; }
+  .lp-filters { grid-template-columns: 1fr 1fr; padding: 12px; }
+  .lp-grid { grid-template-columns: 1fr; }
+  .lp { padding: 16px 12px; }
+
+  /* --- Footer ------------------------------------------------------- */
+
+  .fl { padding: 18px 12px; }
+  .fl a { display: inline-block; margin: 0 6px; }
+}
+
+/* Tap targets on anything that behaves like a button. */
+@media (max-width: 768px) and (pointer: coarse) {
+  .chip, .save, .lp-pager button, .pg button, .tabs button, .out, .blue, .signin, .rfin {
+    min-height: 44px;
+  }
+}

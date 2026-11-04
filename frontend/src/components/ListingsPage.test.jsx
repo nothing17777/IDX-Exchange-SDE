@@ -27,7 +27,7 @@ describe('ListingsPage', () => {
     renderPage()
     expect(screen.getByRole('status')).toHaveTextContent('Loading properties')
     pending[0].respond(page('1 Main St', 487))
-    expect(await screen.findByText('Showing 1 of 487 properties')).toBeInTheDocument()
+    expect(await screen.findByText('Showing 1-1 of 487 properties')).toBeInTheDocument()
   })
 
   it('sends all six filters to the API and renders the matching results', async () => {
@@ -106,6 +106,28 @@ describe('ListingsPage', () => {
     req.respond({ ...page('Page two'), total: 60, page: 2, pages: 3 })
     expect(await screen.findByText('Page two')).toBeInTheDocument()
     expect(screen.getByText('Page 2 of 3')).toBeInTheDocument()
+  })
+
+  it('scrolls back to the top when the page changes', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    pending[0].respond({ ...page('First'), total: 60, page: 1, pages: 3 })
+    await screen.findByText('First')
+    expect(window.scrollTo).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Next page' }))
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0)
+  })
+
+  it('summarises the range of results on the current page', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    pending[0].respond({ ...page('First'), total: 60, page: 1, pages: 3 })
+    expect(await screen.findByText('Showing 1-1 of 60 properties')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Next page' }))
+    pending[pending.length - 1].respond({ ...page('Second'), total: 60, page: 2, pages: 3 })
+    expect(await screen.findByText('Showing 21-21 of 60 properties')).toBeInTheDocument()
   })
 
   it('returns to page 1 when the filters change', async () => {

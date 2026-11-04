@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams, useParams, useLocation, useNavigate } from 'react-router-dom'
 import { SIDE, FOOT } from './chrome.js'
 import MapView from './MapView.jsx'
+import { pageItems } from './components/Pagination.jsx'
+import PropertyImageCarousel from './components/PropertyImageCarousel.jsx'
+import PropertyImageGallery from './components/PropertyImageGallery.jsx'
+import PropertyMap from './components/PropertyMap.jsx'
+import OpenHouses from './components/OpenHouses.jsx'
+import './components/listings.css'
 import './zillow-index.css'
 import './zillow-sale.css'
 
@@ -58,7 +64,7 @@ function SearchBox({ className, placeholder }) {
 
 export function Home() {
   const [d, setD] = useState(null)
-  useEffect(() => { fetch('/api/properties?q=Los%20Angeles&limit=8&sort=price_asc&category=sale').then((r) => r.json()).then(setD) }, [])
+  useEffect(() => { loadList('/api/properties?q=Los%20Angeles&limit=8&sort=price_asc&category=sale', setD) }, [])
   const cards = [['Buy a home', 'A real estate agent can provide you with a clear breakdown of costs so that you can avoid surprise expenses.', 'Find a local agent', 'agents', 'homepage-spot-agent-lg'], ['Rent a home', 'We’re creating a seamless online experience – from shopping on the largest rental network, to applying, to paying rent.', 'Find rentals', 'rent', 'homepage-spot-rent-lg'], ['Finance a home', 'IDX Exchange Home Loans can get you pre-approved so you’re ready to make an offer quickly when you find the right home.', 'Start now', 'mortgage', 'homepage-spot-financing-lg']]
   return <Shell>
     <section className="hero"><h1>Rentals. Homes.<br />Agents. Loans.</h1><SearchBox className="search" placeholder="Enter an address, neighborhood, city, or ZIP code" /></section>
@@ -75,6 +81,29 @@ export function Home() {
   </Shell>
 }
 
+// A failed request used to land in setD as {error}, so the grid blew up on
+// d.results.map and the whole page went blank. Normalising every outcome to a
+// list shape keeps the page rendering and puts the message on screen instead.
+export function loadList(url, setD) {
+  return fetch(url)
+    .then((r) => r.json())
+    .then((j) => setD(Array.isArray(j?.results)
+      ? j
+      : { error: j?.error || 'Could not load listings.', results: [], total: 0, pages: 0 }))
+    .catch(() => setD({ error: 'Could not reach the server. Check that the backend is running.', results: [], total: 0, pages: 0 }))
+}
+
+// "Showing 21-40 of 487 properties" for the current page. The API reports the
+// limit it actually used, so the range stays right whatever the page size is.
+export function resultRange(d) {
+  if (!d) return 'Loading...'
+  if (!d.total || !d.results.length) return 'Showing 0 of 0 properties'
+  const limit = d.limit || d.results.length
+  const first = ((d.page || 1) - 1) * limit + 1
+  const last = first + d.results.length - 1
+  return `Showing ${first.toLocaleString()}-${last.toLocaleString()} of ${d.total.toLocaleString()} properties`
+}
+
 export function Pager({ page, pages, onGo }) {
   const [jump, setJump] = useState('')
   if (!pages || pages <= 1) return null
@@ -88,8 +117,20 @@ export function Pager({ page, pages, onGo }) {
   }
   return <div style={{ display: 'flex', gap: 14, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', margin: '28px 0', fontSize: 14 }}>
     <button className="chip" disabled={page <= 1} onClick={() => onGo(page - 1)}>&lsaquo; Prev</button>
-    <span>Page {page} of {pages.toLocaleString()}</span>
+    <ol className="z-pages">
+      {pageItems(page, pages).map((item) => typeof item === 'string'
+        ? <li key={item} className="z-gap" aria-hidden="true">…</li>
+        : <li key={item}>
+          <button
+            className={item === page ? 'chip z-page on' : 'chip z-page'}
+            aria-label={`Page ${item}`}
+            aria-current={item === page ? 'page' : undefined}
+            onClick={() => onGo(item)}
+          >{item}</button>
+        </li>)}
+    </ol>
     <button className="chip" disabled={page >= pages} onClick={() => onGo(page + 1)}>Next &rsaquo;</button>
+    <span>Page {page} of {pages.toLocaleString()}</span>
     <form onSubmit={submit} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       <label htmlFor="z-jump">Go to page</label>
       <input id="z-jump" className="chip" style={{ width: 90 }} type="number" min="1" max={pages} value={jump} onChange={(e) => setJump(e.target.value)} placeholder={String(page)} />
@@ -104,7 +145,7 @@ export function ForSale() {
   const nav = useNavigate()
   const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
-  useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'sale'); fetch('/api/properties?' + n).then((r) => r.json()).then(setD) }, [sp])
+  useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'sale'); loadList('/api/properties?' + n, setD) }, [sp])
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
@@ -125,15 +166,16 @@ export function ForSale() {
       <div className="mapcol"><MapView params={mapParams} /></div>
       <div className="listcol">
         <h1>{q} Real Estate &amp; Homes For Sale</h1>
-        <div className="count"><span>{d ? `${d.total.toLocaleString()} results` : 'Loading...'}</span>
+        <div className="count"><span>{resultRange(d)}</span>
           <select value={f.sort} onChange={(e) => { const v = e.target.value; setF({ ...f, sort: v }); const n = new URLSearchParams(sp); v ? n.set('sort', v) : n.delete('sort'); setSp(n) }} style={{ border: 0, font: 'inherit' }}><option value="">Sort: Homes for You</option><option value="price_asc">Price (Low to High)</option><option value="price_desc">Price (High to Low)</option></select></div>
         <div className="grid">{!d && <Spinner />}{d?.results.map((p) => <Link key={p.id} className="card" to={`/property/${p.id}`}>
-          <div className="ph" style={{ backgroundImage: p.photos[0] ? `url(${p.photos[0]})` : 'none' }}><div className="heart">♡</div></div>
+          <div className="ph"><PropertyImageCarousel photos={p.photos} alt={p.address} className="z-ph" /><div className="heart">♡</div></div>
           <div className="in"><div className="price">{usd(p.price)}</div>
             <div className="meta">{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | {p.type?.replace(/([A-Z])/g, ' $1').trim()} for sale</div>
             <div className="addr">{p.address}, {p.city}, {p.state} {p.zip}</div>
             {p.nextOpen && <div className="broker" style={{ color: 'var(--c-hot)' }}>{fmtOpen(p.nextOpen)}</div>}</div></Link>)}</div>
-        {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: 'var(--c-mute)' }}>No homes match your search yet — try widening your filters.</div>}
+        {d?.error && <div role="alert" style={{ padding: '10px 0 28px', color: 'var(--c-hot)' }}>{d.error}</div>}
+        {d && !d.error && !d.results.length && <div style={{ padding: '10px 0 28px', color: 'var(--c-mute)' }}>No homes match your search yet — try widening your filters.</div>}
         {d && <Pager page={page} pages={d.pages} onGo={go} />}
       </div>
     </div>
@@ -146,7 +188,7 @@ export function ForRent() {
   const nav = useNavigate()
   const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
-  useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'rent'); fetch('/api/properties?' + n).then((r) => r.json()).then(setD) }, [sp])
+  useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'rent'); loadList('/api/properties?' + n, setD) }, [sp])
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
@@ -167,15 +209,16 @@ export function ForRent() {
       <div className="mapcol"><MapView params={mapParams} /></div>
       <div className="listcol">
         <h1>{q} Apartments &amp; Houses For Rent</h1>
-        <div className="count"><span>{d ? `${d.total.toLocaleString()} results` : 'Loading...'}</span>
+        <div className="count"><span>{resultRange(d)}</span>
           <select value={f.sort} onChange={(e) => { const v = e.target.value; setF({ ...f, sort: v }); const n = new URLSearchParams(sp); v ? n.set('sort', v) : n.delete('sort'); setSp(n) }} style={{ border: 0, font: 'inherit' }}><option value="">Sort: Homes for You</option><option value="price_asc">Rent (Low to High)</option><option value="price_desc">Rent (High to Low)</option></select></div>
         <div className="grid">{!d && <Spinner />}{d?.results.map((p) => <Link key={p.id} className="card" to={`/property/${p.id}`}>
-          <div className="ph" style={{ backgroundImage: p.photos[0] ? `url(${p.photos[0]})` : 'none' }}><div className="heart">♡</div></div>
+          <div className="ph"><PropertyImageCarousel photos={p.photos} alt={p.address} className="z-ph" /><div className="heart">♡</div></div>
           <div className="in"><div className="price">{usd(p.price)}/mo</div>
             <div className="meta">{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | {p.type?.replace(/([A-Z])/g, ' $1').trim()} for rent</div>
             <div className="addr">{p.address}, {p.city}, {p.state} {p.zip}</div>
             {p.nextOpen && <div className="broker" style={{ color: 'var(--c-hot)' }}>{fmtOpen(p.nextOpen)}</div>}</div></Link>)}</div>
-        {d && !d.results.length && <div style={{ padding: '10px 0 28px', color: 'var(--c-mute)' }}>No rentals match your search yet — try widening your filters.</div>}
+        {d?.error && <div role="alert" style={{ padding: '10px 0 28px', color: 'var(--c-hot)' }}>{d.error}</div>}
+        {d && !d.error && !d.results.length && <div style={{ padding: '10px 0 28px', color: 'var(--c-mute)' }}>No rentals match your search yet — try widening your filters.</div>}
         {d && <Pager page={page} pages={d.pages} onGo={go} />}
       </div>
     </div>
@@ -191,15 +234,28 @@ export function Detail() {
       <Link to={p?.forRent ? '/rent' : '/for-sale'} style={{ color: 'var(--c-link)', fontWeight: 700 }}>← Back to search</Link>
       {err && <p>Listing not found.</p>}
       {!p && !err && <Spinner />}
-      {p && <>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 6, height: 400, borderRadius: 12, overflow: 'hidden', margin: '12px 0' }}>
-          {p.photos.slice(0, 5).map((u, i) => <div key={i} style={{ background: `var(--c-ph) url(${u}) center/cover`, gridRow: i === 0 ? 'span 2' : 'auto' }} />)}</div>
-        <div style={{ fontSize: 32, fontWeight: 800 }}>{usd(p.price)}{p.forRent ? '/mo' : ''}</div>
-        <div style={{ fontWeight: 600 }}>{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | Built {p.yearBuilt}</div>
-        <h3>{p.address}, {p.city}, {p.state} {p.zip}</h3><p>{p.remarks}</p>
-        {p.openHouses.length > 0 && <><h3>Open houses</h3>{p.openHouses.map((o, i) => <div key={i} style={{ background: 'var(--c-tint)', borderRadius: 8, padding: '10px 14px', margin: '8px 0', fontSize: 14 }}><b>{new Date(String(o.date).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</b> {o.startTime.slice(0, 5)}-{o.endTime.slice(0, 5)}{o.remarks ? ` — ${o.remarks}` : ''}</div>)}</>}
-        {p.lat && <iframe title="map" style={{ width: '100%', height: 320, border: 0, borderRadius: 12, marginTop: 20 }} src={`https://maps.google.com/maps?q=${p.lat},${p.lng}&z=15&output=embed`} />}
-      </>}
+      {p && <div className="pd pd-inline">
+        <PropertyImageGallery photos={p.photos} alt={p.address} />
+        <div style={{ fontSize: 32, fontWeight: 800, marginTop: 16 }}>{usd(p.price)}{p.forRent ? '/mo' : ''}</div>
+        <h3 style={{ margin: '4px 0 12px' }}>{p.address}, {p.city}, {p.state} {p.zip}</h3>
+        <dl className="pd-stats">
+          <div><dt>Beds</dt><dd>{p.beds ?? '—'}</dd></div>
+          <div><dt>Baths</dt><dd>{p.baths ? Number(p.baths) : '—'}</dd></div>
+          <div><dt>Square feet</dt><dd>{p.sqft ? p.sqft.toLocaleString() : '—'}</dd></div>
+          <div><dt>Year built</dt><dd>{p.yearBuilt || '—'}</dd></div>
+        </dl>
+        <section className="pd-description"><h2>Description</h2><p>{p.remarks || 'No description provided for this property.'}</p></section>
+        <section className="pd-details"><h2>Property details</h2>
+          <dl>
+            <div><dt>Listing ID</dt><dd>{p.id}</dd></div>
+            <div><dt>Property type</dt><dd>{p.type?.replace(/([A-Z])/g, ' $1').trim() || '—'}</dd></div>
+            <div><dt>Lot size</dt><dd>{p.lotAcres ? `${p.lotAcres} acres` : '—'}</dd></div>
+            <div><dt>ZIP code</dt><dd>{p.zip || '—'}</dd></div>
+          </dl>
+        </section>
+        <OpenHouses openHouses={p.openHouses} />
+        <PropertyMap lat={p.lat} lng={p.lng} address={p.address} />
+      </div>}
     </div>
   </Shell>
 }

@@ -5,4 +5,5 @@ import ThemeToggle from './ThemeToggle.jsx'
 import './index.css'
 import './redfin.css'
 import './dark.css'
+import './mobile.css'
 createRoot(document.getElementById('root')).render(<BrowserRouter><App /><ThemeToggle /></BrowserRouter>)

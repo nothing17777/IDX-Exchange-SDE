@@ -29,3 +29,63 @@
 .lp-pager-status { color: #535364; font-size: 14px; font-variant-numeric: tabular-nums; }
 .lp-jump { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #535364; }
 .lp-jump input { height: 38px; width: 80px; border: 1px solid #cdcdd3; border-radius: 8px; padding: 0 10px; font: inherit; background: #fff; }
+
+.lp-per-page { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #535364; margin-bottom: 8px; }
+.lp-per-page select { height: 34px; border: 1px solid #cdcdd3; border-radius: 8px; padding: 0 8px; font: inherit; background: #fff; }
+
+.lp-pager { flex-wrap: wrap; }
+.lp-pages { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.lp-pager .lp-page { min-width: 38px; padding: 0 10px; }
+.lp-pager .lp-page.is-current { background: #0041d9; color: #fff; border-color: #0041d9; }
+.lp-gap { color: #8a8a99; padding: 0 2px; }
+
+.lp-carousel { position: relative; }
+.lp-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.9); color: #111; font-size: 20px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+.lp-prev { left: 8px; }
+.lp-next { right: 8px; }
+.lp-counter { position: absolute; right: 8px; bottom: 8px; background: rgba(0, 0, 0, 0.6); color: #fff; border-radius: 10px; padding: 2px 8px; font-size: 12px; }
+
+.pd { max-width: 1100px; margin: 0 auto; padding: 24px 20px 64px; }
+.pd-back { display: inline-block; color: #0041d9; font-weight: 700; text-decoration: none; margin-bottom: 16px; }
+.pd-price { font-size: 32px; margin: 16px 0 4px; }
+.pd-address { font-size: 18px; margin: 0 0 16px; color: #535364; }
+.pd h2 { font-size: 20px; margin: 28px 0 10px; }
+
+.pd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 0; background: #f6f7fb; border-radius: 12px; padding: 16px; }
+.pd-stats dt, .pd-details dt { font-size: 13px; color: #535364; }
+.pd-stats dd, .pd-details dd { margin: 2px 0 0; font-size: 18px; font-weight: 700; }
+.pd-details dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0; }
+.pd-details dd { font-size: 15px; }
+
+.pd-gallery-empty { background: #e4e6ee; border-radius: 12px; padding: 60px; text-align: center; color: #8a8a99; }
+.pd-main { display: block; width: 100%; padding: 0; border: 0; background: #e4e6ee; border-radius: 12px; overflow: hidden; cursor: zoom-in; }
+.pd-main img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
+.pd-thumbs { display: flex; gap: 8px; overflow-x: auto; list-style: none; margin: 8px 0 0; padding: 0 0 6px; }
+.pd-thumb { width: 96px; height: 68px; padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: #e4e6ee; cursor: pointer; }
+.pd-thumb.is-current { border-color: #0041d9; }
+.pd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.pd-lightbox { position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.9); display: flex; align-items: center; justify-content: center; }
+.pd-lb-img { max-width: 90vw; max-height: 85vh; object-fit: contain; }
+.pd-lightbox button { position: absolute; border: 0; background: rgba(255, 255, 255, 0.15); color: #fff; cursor: pointer; border-radius: 50%; width: 44px; height: 44px; font-size: 26px; line-height: 1; }
+.pd-close { top: 20px; right: 20px; }
+.pd-lb-prev { left: 20px; top: 50%; transform: translateY(-50%); }
+.pd-lb-next { right: 20px; top: 50%; transform: translateY(-50%); }
+.pd-lb-counter { position: absolute; bottom: 20px; color: #fff; font-size: 14px; }
+
+.pd-oh-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pd-oh { background: #eef2ff; border-radius: 8px; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; }
+.pd-oh-date { font-weight: 700; }
+.pd-oh-remarks { flex-basis: 100%; color: #535364; }
+.pd-no-open { color: #535364; }
+
+.pd-map-frame { width: 100%; height: 320px; border: 0; border-radius: 12px; }
+.pd-directions { display: inline-block; margin-top: 10px; color: #0041d9; font-weight: 700; text-decoration: none; }
+
+/* Carousel embedded in the Zillow-style card photo frame, which sets its own height. */
+.z-ph { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; border-radius: inherit; }
+.z-pages { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.z-pages .chip.z-page { min-width: 34px; justify-content: center; }
+.z-pages .chip.z-page.on { background: #0041d9; color: #fff; border-color: #0041d9; }
+.z-gap { color: var(--c-mute); padding: 0 2px; }
+.pd-inline { max-width: none; padding: 0; }

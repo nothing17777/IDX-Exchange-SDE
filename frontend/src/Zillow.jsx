@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams, useParams, useLocation, useNavigate } from 'react-router-dom'
-import { SIDE, FOOT } from './chrome.js'
+import { FOOT } from './chrome.js'
+import Sidebar from './components/Sidebar.jsx'
+import SaveButton from './components/SaveButton.jsx'
+import { Sell, Agents, ManageRentals, Advertise, Help } from './components/InfoPages.jsx'
+import { recordSearch } from './saved.js'
 import MapView from './MapView.jsx'
 import { pageItems } from './components/Pagination.jsx'
 import PropertyImageCarousel from './components/PropertyImageCarousel.jsx'
@@ -40,7 +44,7 @@ export function SiteSwitch({ current }) {
 
 export function Shell({ children, sale }) {
   return <div className={sale ? 'sale' : ''}>
-    <div dangerouslySetInnerHTML={{ __html: SIDE }} />
+    <Sidebar />
     <div className="wrap">
       <header>
         <SiteSwitch current="zillow" />
@@ -145,7 +149,16 @@ export function ForSale() {
   const nav = useNavigate()
   const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
-  useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'sale'); loadList('/api/properties?' + n, setD) }, [sp])
+  useEffect(() => {
+    setD(null)
+    const n = new URLSearchParams(sp)
+    if (!n.get('q')) n.set('q', 'Los Angeles')
+    n.set('category', 'sale')
+    loadList('/api/properties?' + n, setD)
+    // Only a term the visitor actually typed is worth keeping; the
+    // 'Los Angeles' default above would otherwise log every visit.
+    if (sp.get('q')) recordSearch({ q: sp.get('q'), category: 'sale', path: '/for-sale?' + sp })
+  }, [sp])
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
@@ -169,7 +182,7 @@ export function ForSale() {
         <div className="count"><span>{resultRange(d)}</span>
           <select value={f.sort} onChange={(e) => { const v = e.target.value; setF({ ...f, sort: v }); const n = new URLSearchParams(sp); v ? n.set('sort', v) : n.delete('sort'); setSp(n) }} style={{ border: 0, font: 'inherit' }}><option value="">Sort: Homes for You</option><option value="price_asc">Price (Low to High)</option><option value="price_desc">Price (High to Low)</option></select></div>
         <div className="grid">{!d && <Spinner />}{d?.results.map((p) => <Link key={p.id} className="card" to={`/property/${p.id}`}>
-          <div className="ph"><PropertyImageCarousel photos={p.photos} alt={p.address} className="z-ph" /><div className="heart">♡</div></div>
+          <div className="ph"><PropertyImageCarousel photos={p.photos} alt={p.address} className="z-ph" /><SaveButton property={p} /></div>
           <div className="in"><div className="price">{usd(p.price)}</div>
             <div className="meta">{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | {p.type?.replace(/([A-Z])/g, ' $1').trim()} for sale</div>
             <div className="addr">{p.address}, {p.city}, {p.state} {p.zip}</div>
@@ -188,7 +201,16 @@ export function ForRent() {
   const nav = useNavigate()
   const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
-  useEffect(() => { setD(null); const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'rent'); loadList('/api/properties?' + n, setD) }, [sp])
+  useEffect(() => {
+    setD(null)
+    const n = new URLSearchParams(sp)
+    if (!n.get('q')) n.set('q', 'Los Angeles')
+    n.set('category', 'rent')
+    loadList('/api/properties?' + n, setD)
+    // Only a term the visitor actually typed is worth keeping; the
+    // 'Los Angeles' default above would otherwise log every visit.
+    if (sp.get('q')) recordSearch({ q: sp.get('q'), category: 'rent', path: '/rent?' + sp })
+  }, [sp])
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
@@ -212,7 +234,7 @@ export function ForRent() {
         <div className="count"><span>{resultRange(d)}</span>
           <select value={f.sort} onChange={(e) => { const v = e.target.value; setF({ ...f, sort: v }); const n = new URLSearchParams(sp); v ? n.set('sort', v) : n.delete('sort'); setSp(n) }} style={{ border: 0, font: 'inherit' }}><option value="">Sort: Homes for You</option><option value="price_asc">Rent (Low to High)</option><option value="price_desc">Rent (High to Low)</option></select></div>
         <div className="grid">{!d && <Spinner />}{d?.results.map((p) => <Link key={p.id} className="card" to={`/property/${p.id}`}>
-          <div className="ph"><PropertyImageCarousel photos={p.photos} alt={p.address} className="z-ph" /><div className="heart">♡</div></div>
+          <div className="ph"><PropertyImageCarousel photos={p.photos} alt={p.address} className="z-ph" /><SaveButton property={p} /></div>
           <div className="in"><div className="price">{usd(p.price)}/mo</div>
             <div className="meta">{p.beds} bds | {Number(p.baths)} ba | {p.sqft?.toLocaleString()} sqft | {p.type?.replace(/([A-Z])/g, ' $1').trim()} for rent</div>
             <div className="addr">{p.address}, {p.city}, {p.state} {p.zip}</div>
@@ -236,7 +258,10 @@ export function Detail() {
       {!p && !err && <Spinner />}
       {p && <div className="pd pd-inline">
         <PropertyImageGallery photos={p.photos} alt={p.address} />
-        <div style={{ fontSize: 32, fontWeight: 800, marginTop: 16 }}>{usd(p.price)}{p.forRent ? '/mo' : ''}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 16 }}>
+          <div style={{ fontSize: 32, fontWeight: 800 }}>{usd(p.price)}{p.forRent ? '/mo' : ''}</div>
+          <SaveButton property={p} className="rail-heart" />
+        </div>
         <h3 style={{ margin: '4px 0 12px' }}>{p.address}, {p.city}, {p.state} {p.zip}</h3>
         <dl className="pd-stats">
           <div><dt>Beds</dt><dd>{p.beds ?? '—'}</dd></div>
@@ -260,7 +285,7 @@ export function Detail() {
   </Shell>
 }
 
-const TITLES = { sell: 'Sell your home', agents: 'Find an agent', 'manage-rentals': 'Manage rentals', advertise: 'Advertise', help: 'Get help' }
+const PAGES = { sell: Sell, agents: Agents, 'manage-rentals': ManageRentals, advertise: Advertise, help: Help }
 
 function Mortgage() {
   const [price, setPrice] = useState(800000), [down, setDown] = useState(20), [rate, setRate] = useState(6.5), [years, setYears] = useState(30)
@@ -287,9 +312,9 @@ function Mortgage() {
 export function Simple() {
   const { page } = useParams()
   if (page === 'mortgage') return <Shell sale><Mortgage /></Shell>
-  const t = TITLES[page]
+  const Content = PAGES[page]
+  if (Content) return <Shell sale><Content /></Shell>
   return <Shell sale><div style={{ padding: '60px 32px', minHeight: 420 }}>
-    <h1>{t || 'Page not found'}</h1>
-    {t && <p style={{ fontSize: 20, color: 'var(--c-mute)' }}>Coming soon.</p>}
+    <h1>Page not found</h1>
     <Link className="save" style={{ display: 'inline-flex', width: 'fit-content' }} to="/">Back home</Link></div></Shell>
 }

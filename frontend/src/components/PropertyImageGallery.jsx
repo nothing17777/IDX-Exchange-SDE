@@ -2,10 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { parsePhotos } from './photos.js'
 
 export default function PropertyImageGallery({ photos, alt = 'Property photo' }) {
-  const list = parsePhotos(photos)
+  const all = parsePhotos(photos)
+  const [broken, setBroken] = useState(() => new Set())
   const [index, setIndex] = useState(0)
   const [lightbox, setLightbox] = useState(false)
   const overlay = useRef(null)
+
+  // The feed hands us URLs whose media tokens have expired; those 404 and would
+  // otherwise render as broken-image boxes. Drop each one once it fails to load.
+  const list = all.filter((u) => !broken.has(u))
+  const markBroken = (url) => setBroken((prev) => new Set(prev).add(url))
 
   // A plain <div> is not in the tab order, so it never receives keydown. The
   // overlay gets tabIndex={-1} to make it focusable, and focus moves to it as
@@ -36,7 +42,11 @@ export default function PropertyImageGallery({ photos, alt = 'Property photo' })
         aria-label="Open photo full screen"
         onClick={() => setLightbox(true)}
       >
-        <img src={list[current]} alt={`${alt} ${current + 1} of ${list.length}`} />
+        <img
+          src={list[current]}
+          alt={`${alt} ${current + 1} of ${list.length}`}
+          onError={() => markBroken(list[current])}
+        />
       </button>
 
       {list.length > 1 && (
@@ -50,7 +60,7 @@ export default function PropertyImageGallery({ photos, alt = 'Property photo' })
                 aria-current={i === current ? 'true' : undefined}
                 onClick={() => setIndex(i)}
               >
-                <img src={url} alt="" loading="lazy" />
+                <img src={url} alt="" loading="lazy" onError={() => markBroken(url)} />
               </button>
             </li>
           ))}
@@ -74,7 +84,12 @@ export default function PropertyImageGallery({ photos, alt = 'Property photo' })
           {list.length > 1 && (
             <button type="button" className="pd-lb-prev" aria-label="Previous photo" onClick={() => move(-1)}>&lsaquo;</button>
           )}
-          <img className="pd-lb-img" src={list[current]} alt={`${alt} ${current + 1} of ${list.length}`} />
+          <img
+            className="pd-lb-img"
+            src={list[current]}
+            alt={`${alt} ${current + 1} of ${list.length}`}
+            onError={() => markBroken(list[current])}
+          />
           {list.length > 1 && (
             <button type="button" className="pd-lb-next" aria-label="Next photo" onClick={() => move(1)}>&rsaquo;</button>
           )}

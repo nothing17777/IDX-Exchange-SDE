@@ -46,7 +46,33 @@ function toOpenHouse({ all_data, ...o }) {
 const SUMMARY = `L_ListingID id, L_Address address, L_City city, L_State state, L_Zip zip,
   L_SystemPrice price, L_Keyword2 beds, LM_Dec_3 baths, LM_Int2_3 sqft, L_Type_ type,
   (SELECT MIN(CONCAT(o.OpenHouseDate,' ',o.OH_StartTime,'|',o.OH_EndTime)) FROM rets_openhouse o WHERE o.L_ListingID = rets_property.L_ListingID AND o.OpenHouseDate >= CURDATE()) nextOpen,
-  LMD_MP_Latitude lat, LMD_MP_Longitude lng, YearBuilt yearBuilt, L_Photos photos`;
+  LMD_MP_Latitude lat, LMD_MP_Longitude lng, YearBuilt yearBuilt, ListingContractDate listedDate, L_Photos photos`;
+
+// Sorting whitelist. Keys are the public API names; values are the real column
+// names in rets_property. Interpolating anything outside this map into ORDER BY
+// would be an injection hole, and a RESO-style name (ListPrice) is not a column
+// here, so it would silently sort by nothing.
+const SORT_COLUMNS = {
+  price: 'L_SystemPrice',
+  listed: 'ListingContractDate',
+  sqft: 'LM_Int2_3',
+  beds: 'L_Keyword2',
+};
+const SORT_ORDERS = ['asc', 'desc'];
+
+// MySQL sorts NULL first on ASC, which would bury priced listings under rows
+// that have no value at all, so nulls are pushed last in both directions.
+function orderBy(req) {
+  const { sortBy, sortOrder } = req.query;
+  if (sortBy && SORT_COLUMNS[sortBy]) {
+    const col = SORT_COLUMNS[sortBy];
+    const dir = sortOrder === 'asc' ? 'ASC' : 'DESC';
+    // L_ListingID breaks ties so paging cannot show the same row twice.
+    return `${col} IS NULL, ${col} ${dir}, L_ListingID DESC`;
+  }
+  const legacy = { price_asc: 'L_SystemPrice ASC', price_desc: 'L_SystemPrice DESC', newest: 'L_ListingID DESC' };
+  return legacy[req.query.sort] || legacy.newest;
+}
 
 const RENTAL_TYPES = (process.env.RENTAL_PROPERTY_TYPES || 'ResidentialLease,Apartment')
   .split(',').map((s) => s.trim()).filter(Boolean);
@@ -75,6 +101,9 @@ function validateQuery(req) {
   if (!isNum(baths) || +baths < 0) errors.push('baths must be a non-negative number');
   if (zipcode !== undefined && !/^\d{1,10}$/.test(zipcode)) errors.push('zipcode must be numeric');
   if (category !== undefined && !['sale', 'rent'].includes(category)) errors.push("category must be 'sale' or 'rent'");
+  const { sortBy, sortOrder } = req.query;
+  if (sortBy !== undefined && !Object.hasOwn(SORT_COLUMNS, sortBy)) errors.push(`sortBy must be one of: ${Object.keys(SORT_COLUMNS).join(', ')}`);
+  if (sortOrder !== undefined && !SORT_ORDERS.includes(sortOrder)) errors.push("sortOrder must be 'asc' or 'desc'");
   if (minPrice !== undefined && maxPrice !== undefined && isNum(minPrice) && isNum(maxPrice) && +minPrice > +maxPrice) errors.push('minPrice must not exceed maxPrice');
   return errors;
 }
@@ -119,10 +148,9 @@ app.get('/api/properties', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const offset = req.query.offset !== undefined ? Math.max(0, parseInt(req.query.offset) || 0) : (page - 1) * limit;
     const { w, args } = buildWhere(req);
-    const sorts = { price_asc: 'L_SystemPrice ASC', price_desc: 'L_SystemPrice DESC', newest: 'L_ListingID DESC' };
-    const [[{ total }]] = await pool.query(`SELECT COUNT(*) total FROM rets_property WHERE ${w}`, args);
+        const [[{ total }]] = await pool.query(`SELECT COUNT(*) total FROM rets_property WHERE ${w}`, args);
     const [rows] = await pool.query(
-      `SELECT ${SUMMARY} FROM rets_property WHERE ${w} ORDER BY ${sorts[req.query.sort] || sorts.newest} LIMIT ? OFFSET ?`,
+      `SELECT ${SUMMARY} FROM rets_property WHERE ${w} ORDER BY ${orderBy(req)} LIMIT ? OFFSET ?`,
       [...args, limit, offset]);
     // The cards carousel through photos, so send a few rather than just the
     // cover shot — capped so a 40-photo listing cannot bloat the page payload.

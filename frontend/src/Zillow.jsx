@@ -25,6 +25,34 @@ export const fmtOpen = (s) => {
   return `Open: ${dt.toLocaleDateString('en-US', { weekday: 'short' })} ${f(h)}-${f(e)} (${dt.getMonth() + 1}/${dt.getDate()})`
 }
 
+// Sort lives in the URL, so it survives page changes (go() copies the existing
+// params) and is shareable. The value is "<sortBy>:<sortOrder>" so one <select>
+// drives both API parameters.
+export const SORT_OPTIONS = [
+  { value: '', label: 'Homes for You' },
+  { value: 'price:asc', label: 'Price (Low to High)', rentLabel: 'Rent (Low to High)' },
+  { value: 'price:desc', label: 'Price (High to Low)', rentLabel: 'Rent (High to Low)' },
+  { value: 'listed:desc', label: 'Newest listings' },
+  { value: 'listed:asc', label: 'Oldest listings' },
+  { value: 'sqft:desc', label: 'Square feet (largest)' },
+  { value: 'beds:desc', label: 'Bedrooms (most)' },
+]
+
+export function SortSelect({ sp, setSp, rent }) {
+  const value = sp.get('sortBy') ? `${sp.get('sortBy')}:${sp.get('sortOrder') || 'desc'}` : ''
+  const onChange = (e) => {
+    const n = new URLSearchParams(sp)
+    const [by, order] = e.target.value.split(':')
+    if (by) { n.set('sortBy', by); n.set('sortOrder', order) } else { n.delete('sortBy'); n.delete('sortOrder') }
+    // A different order makes the current page number meaningless.
+    n.delete('page')
+    setSp(n)
+  }
+  return <select aria-label="Sort results" value={value} onChange={onChange} style={{ border: 0, font: 'inherit' }}>
+    {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.value ? '' : 'Sort: '}{rent && o.rentLabel ? o.rentLabel : o.label}</option>)}
+  </select>
+}
+
 export const Spinner = () => <div className="spin" role="status" aria-label="Loading" />
 
 export function SiteSwitch({ current }) {
@@ -147,7 +175,7 @@ export function ForSale() {
   const [sp, setSp] = useSearchParams()
   const [d, setD] = useState(null)
   const nav = useNavigate()
-  const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
+  const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
   useEffect(() => {
     setD(null)
@@ -160,7 +188,9 @@ export function ForSale() {
     if (sp.get('q')) recordSearch({ q: sp.get('q'), category: 'sale', path: '/for-sale?' + sp })
   }, [sp])
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
-  const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
+  // Sort is deliberately dropped here: a new filter set means a new result set,
+  // so it starts again from the default order.
+  const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([k, v]) => v && k !== 'sort'))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
   const mapParams = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'sale'); return n })()
   const switchCategory = (e) => { if (e.target.value === 'rent') nav('/rent?' + new URLSearchParams({ q: f.q })) }
@@ -180,7 +210,7 @@ export function ForSale() {
       <div className="listcol">
         <h1>{q} Real Estate &amp; Homes For Sale</h1>
         <div className="count"><span>{resultRange(d)}</span>
-          <select value={f.sort} onChange={(e) => { const v = e.target.value; setF({ ...f, sort: v }); const n = new URLSearchParams(sp); v ? n.set('sort', v) : n.delete('sort'); setSp(n) }} style={{ border: 0, font: 'inherit' }}><option value="">Sort: Homes for You</option><option value="price_asc">Price (Low to High)</option><option value="price_desc">Price (High to Low)</option></select></div>
+          <SortSelect sp={sp} setSp={setSp} /></div>
         <div className="grid">{!d && <Spinner />}{d?.results.map((p) => <Link key={p.id} className="card" to={`/property/${p.id}`}>
           <div className="ph"><PropertyImageCarousel photos={p.photos} alt={p.address} className="z-ph" /><SaveButton property={p} /></div>
           <div className="in"><div className="price">{usd(p.price)}</div>
@@ -199,7 +229,7 @@ export function ForRent() {
   const [sp, setSp] = useSearchParams()
   const [d, setD] = useState(null)
   const nav = useNavigate()
-  const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '', sort: sp.get('sort') || '' })
+  const [f, setF] = useState({ q: sp.get('q') || 'Los Angeles', minPrice: sp.get('minPrice') || '', maxPrice: sp.get('maxPrice') || '', beds: sp.get('beds') || '', baths: sp.get('baths') || '', type: sp.get('type') || '' })
   const q = sp.get('q') || 'Los Angeles', page = +sp.get('page') || 1
   useEffect(() => {
     setD(null)
@@ -212,7 +242,9 @@ export function ForRent() {
     if (sp.get('q')) recordSearch({ q: sp.get('q'), category: 'rent', path: '/rent?' + sp })
   }, [sp])
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
-  const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([, v]) => v))) }
+  // Sort is deliberately dropped here: a new filter set means a new result set,
+  // so it starts again from the default order.
+  const submit = (e) => { e.preventDefault(); setSp(Object.fromEntries(Object.entries(f).filter(([k, v]) => v && k !== 'sort'))) }
   const go = (p) => { const n = new URLSearchParams(sp); n.set('page', p); setSp(n); window.scrollTo(0, 0) }
   const mapParams = (() => { const n = new URLSearchParams(sp); if (!n.get('q')) n.set('q', 'Los Angeles'); n.set('category', 'rent'); return n })()
   const switchCategory = (e) => { if (e.target.value === 'sale') nav('/for-sale?' + new URLSearchParams({ q: f.q })) }
@@ -232,7 +264,7 @@ export function ForRent() {
       <div className="listcol">
         <h1>{q} Apartments &amp; Houses For Rent</h1>
         <div className="count"><span>{resultRange(d)}</span>
-          <select value={f.sort} onChange={(e) => { const v = e.target.value; setF({ ...f, sort: v }); const n = new URLSearchParams(sp); v ? n.set('sort', v) : n.delete('sort'); setSp(n) }} style={{ border: 0, font: 'inherit' }}><option value="">Sort: Homes for You</option><option value="price_asc">Rent (Low to High)</option><option value="price_desc">Rent (High to Low)</option></select></div>
+          <SortSelect sp={sp} setSp={setSp} rent /></div>
         <div className="grid">{!d && <Spinner />}{d?.results.map((p) => <Link key={p.id} className="card" to={`/property/${p.id}`}>
           <div className="ph"><PropertyImageCarousel photos={p.photos} alt={p.address} className="z-ph" /><SaveButton property={p} /></div>
           <div className="in"><div className="price">{usd(p.price)}/mo</div>
